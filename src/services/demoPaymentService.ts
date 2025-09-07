@@ -13,7 +13,7 @@ export class DemoPaymentService {
     paymentData: DemoPaymentData
   ): Promise<{ success: boolean; paymentId?: string; error?: string }> {
     return new Promise((resolve) => {
-      // Simulate payment processing delay
+      // Simulate payment processing delay - reduced from 2s to 1s
       setTimeout(() => {
         // 90% success rate for demo
         const isSuccess = Math.random() > 0.1;
@@ -32,7 +32,7 @@ export class DemoPaymentService {
             error: 'Demo payment failed - please try again' 
           });
         }
-      }, 2000); // 2 second delay to simulate real payment
+      }, 1000); // Reduced from 2 seconds to 1 second
     });
   }
 
@@ -43,7 +43,7 @@ export class DemoPaymentService {
         const demoOrderId = `demo_order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         console.log('✅ Demo order created:', demoOrderId);
         resolve({ orderId: demoOrderId });
-      }, 1000);
+      }, 500); // Reduced from 1 second to 0.5 seconds
     });
   }
 

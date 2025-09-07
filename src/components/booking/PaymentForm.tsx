@@ -4,6 +4,7 @@ import { PaymentService } from '../../services/paymentService';
 import { DemoPaymentService } from '../../services/demoPaymentService';
 import DemoPaymentForm from './DemoPaymentForm';
 import LoadingSpinner from '../common/LoadingSpinner';
+import BookingProgressLoader from '../common/BookingProgressLoader';
 import { BookingService } from '../../services/bookingService';
 import { EmailService } from '../../services/emailService';
 
@@ -32,17 +33,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'property'>('online');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showHalfPaymentConfirm, setShowHalfPaymentConfirm] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'processing' | 'updating' | 'emailing' | 'completing'>('processing');
 
   const handleHalfPayment = async () => {
     setIsProcessing(true);
+    setCurrentStep('processing');
+    
     try {
       console.log('🔄 Processing half payment for booking:', supabaseBookingId);
       console.log('📊 Payment form props - bookingId:', bookingId, 'supabaseBookingId:', supabaseBookingId);
       
-      // Simulate half payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Step 1: Simulate half payment processing delay - reduced from 2s to 1s
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Try to update booking if we have a valid identifier
+      // Step 2: Update booking status
+      setCurrentStep('updating');
       const identifier = supabaseBookingId || bookingId;
       if (identifier) {
         console.log('🔄 Attempting to update booking status for half payment:', identifier);
@@ -83,7 +88,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         console.warn('⚠️ No booking identifier available, proceeding with demo half payment');
       }
       
-      // Send confirmation email
+      // Step 3: Send confirmation email
+      setCurrentStep('emailing');
       try {
         await EmailService.sendBookingConfirmation({
           guestName: `${guestDetails.firstName} ${guestDetails.lastName}`,
@@ -101,10 +107,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         // Don't fail the payment if email fails
       }
 
-      // Generate payment ID and complete
+      // Step 4: Complete
+      setCurrentStep('completing');
       const halfPaymentId = `advance_${Date.now()}`;
       console.log('✅ Half payment completed successfully:', halfPaymentId);
-      onPaymentSuccess(halfPaymentId);
+      
+      setTimeout(() => {
+        onPaymentSuccess(halfPaymentId);
+      }, 500);
       
     } catch (error) {
       console.error('❌ Half payment error:', error);
@@ -118,6 +128,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     setShowHalfPaymentConfirm(false);
     handleHalfPayment();
   };
+
+  // Show progress loader when processing half payment
+  if (paymentMethod === 'property' && isProcessing) {
+    return (
+      <BookingProgressLoader 
+        currentStep={currentStep}
+        message="Processing your half payment..."
+      />
+    );
+  }
 
   if (paymentMethod === 'property') {
     return (

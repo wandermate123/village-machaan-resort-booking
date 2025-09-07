@@ -3,6 +3,7 @@ import { CreditCard, Lock, Shield, CheckCircle, AlertCircle } from 'lucide-react
 import { DemoPaymentService } from '../../services/demoPaymentService';
 import { BookingService } from '../../services/bookingService';
 import LoadingSpinner from '../common/LoadingSpinner';
+import BookingProgressLoader from '../common/BookingProgressLoader';
 
 interface DemoPaymentFormProps {
   amount: number;
@@ -29,13 +30,15 @@ const DemoPaymentForm: React.FC<DemoPaymentFormProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('card');
+  const [currentStep, setCurrentStep] = useState<'processing' | 'updating' | 'emailing' | 'completing'>('processing');
 
   const handleDemoPayment = async () => {
     setIsProcessing(true);
     setPaymentError('');
+    setCurrentStep('processing');
 
     try {
-      // Create demo order
+      // Step 1: Create demo order
       const { orderId, error: orderError } = await DemoPaymentService.createOrder({
         amount,
         currency: 'INR',
@@ -49,7 +52,8 @@ const DemoPaymentForm: React.FC<DemoPaymentFormProps> = ({
         throw new Error(orderError || 'Failed to create demo order');
       }
 
-      // Process demo payment
+      // Step 2: Process demo payment
+      setCurrentStep('updating');
       const { success, paymentId, error: paymentError } = await DemoPaymentService.processPayment({
         amount,
         currency: 'INR',
@@ -62,7 +66,7 @@ const DemoPaymentForm: React.FC<DemoPaymentFormProps> = ({
       if (success && paymentId) {
         console.log('✅ Demo payment successful, updating booking status');
         
-        // Update booking status after successful payment
+        // Step 3: Update booking status after successful payment
         const identifier = supabaseBookingId || bookingId;
         if (identifier) {
           console.log('🔄 Updating booking status for:', identifier);
@@ -83,7 +87,11 @@ const DemoPaymentForm: React.FC<DemoPaymentFormProps> = ({
           console.warn('⚠️ No booking identifier available for update');
         }
         
-        onPaymentSuccess(paymentId);
+        // Step 4: Complete
+        setCurrentStep('completing');
+        setTimeout(() => {
+          onPaymentSuccess(paymentId);
+        }, 500);
       } else {
         console.error('❌ Demo payment failed:', paymentError);
         setPaymentError(paymentError || 'Demo payment failed');
@@ -98,6 +106,16 @@ const DemoPaymentForm: React.FC<DemoPaymentFormProps> = ({
       setIsProcessing(false);
     }
   };
+
+  // Show progress loader when processing
+  if (isProcessing) {
+    return (
+      <BookingProgressLoader 
+        currentStep={currentStep}
+        message="Processing your payment securely..."
+      />
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 border border-primary-100">
