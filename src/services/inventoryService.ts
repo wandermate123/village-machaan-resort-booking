@@ -116,52 +116,98 @@ export class InventoryService {
         };
       }
 
-      // Get total units for this villa
-      const { data: totalUnitsData, error: unitsError } = await supabase
-        .from('villa_inventory')
+      // First, try to get data from the new inventory system
+      try {
+        // Get total units for this villa
+        const { data: totalUnitsData, error: unitsError } = await supabase
+          .from('villa_inventory')
+          .select('id')
+          .eq('villa_id', villaId)
+          .eq('status', 'available');
+
+        if (unitsError) throw unitsError;
+
+        const totalUnits = totalUnitsData?.length || 0;
+
+        if (totalUnits === 0) {
+          // Fallback to old method if inventory table is empty
+          return this.getAvailableUnitsFallback(villaId, checkIn, checkOut);
+        }
+
+        // Get units that are blocked or occupied during the date range
+        const { data: occupiedUnits, error: occupiedError } = await supabase
+          .from('booking_units')
+          .select('villa_inventory_id')
+          .eq('villa_id', villaId)
+          .in('status', ['reserved', 'occupied'])
+          .or(`and(check_in.lte.${checkIn},check_out.gt.${checkIn}),and(check_in.lt.${checkOut},check_out.gte.${checkOut}),and(check_in.gte.${checkIn},check_out.lte.${checkOut})`);
+
+        if (occupiedError) throw occupiedError;
+
+        // Get units blocked for maintenance
+        const { data: blockedUnits, error: blockedError } = await supabase
+          .from('inventory_blocks')
+          .select('villa_inventory_id')
+          .eq('villa_id', villaId)
+          .lte('block_date', checkOut)
+          .gte('block_date', checkIn);
+
+        if (blockedError) throw blockedError;
+
+        const occupiedCount = occupiedUnits?.length || 0;
+        const blockedCount = blockedUnits?.length || 0;
+        const unavailableUnits = occupiedCount + blockedCount;
+        const availableUnits = Math.max(0, totalUnits - unavailableUnits);
+        
+        console.log(`📊 Availability for ${villaId}: ${availableUnits}/${totalUnits} units available (${occupiedCount} occupied, ${blockedCount} blocked)`);
+        
+        return {
+          availableUnits,
+          totalUnits
+        };
+      } catch (inventoryError) {
+        console.warn('Inventory system not available, falling back to booking-based calculation:', inventoryError);
+        return this.getAvailableUnitsFallback(villaId, checkIn, checkOut);
+      }
+    } catch (error) {
+      console.error('Error getting available units:', error);
+      ErrorHandler.logError(error, 'get_available_units');
+      // Return fallback data
+      const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
+      return {
+        availableUnits: Math.floor(totalUnits * 0.7),
+        totalUnits
+      };
+    }
+  }
+
+  // Fallback method using booking data
+  private static async getAvailableUnitsFallback(villaId: string, checkIn: string, checkOut: string) {
+    try {
+      const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
+      
+      // Count overlapping bookings using the old method
+      const { data: overlappingBookings, error } = await supabase
+        .from('bookings')
         .select('id')
         .eq('villa_id', villaId)
-        .eq('status', 'available');
-
-      if (unitsError) throw unitsError;
-
-      const totalUnits = totalUnitsData?.length || 0;
-
-      // Get units that are blocked or occupied during the date range
-      const { data: occupiedUnits, error: occupiedError } = await supabase
-        .from('booking_units')
-        .select('villa_inventory_id')
-        .eq('villa_id', villaId)
-        .in('status', ['reserved', 'occupied'])
+        .neq('status', 'cancelled')
+        .neq('payment_status', 'failed')
         .or(`and(check_in.lte.${checkIn},check_out.gt.${checkIn}),and(check_in.lt.${checkOut},check_out.gte.${checkOut}),and(check_in.gte.${checkIn},check_out.lte.${checkOut})`);
 
-      if (occupiedError) throw occupiedError;
+      if (error) throw error;
 
-      // Get units blocked for maintenance
-      const { data: blockedUnits, error: blockedError } = await supabase
-        .from('inventory_blocks')
-        .select('villa_inventory_id')
-        .eq('villa_id', villaId)
-        .lte('block_date', checkOut)
-        .gte('block_date', checkIn);
-
-      if (blockedError) throw blockedError;
-
-      const occupiedCount = occupiedUnits?.length || 0;
-      const blockedCount = blockedUnits?.length || 0;
-      const unavailableUnits = occupiedCount + blockedCount;
-      const availableUnits = Math.max(0, totalUnits - unavailableUnits);
+      const bookedUnits = overlappingBookings?.length || 0;
+      const availableUnits = Math.max(0, totalUnits - bookedUnits);
       
-      console.log(`📊 Availability for ${villaId}: ${availableUnits}/${totalUnits} units available`);
+      console.log(`📊 Fallback availability for ${villaId}: ${availableUnits}/${totalUnits} units available (${bookedUnits} booked)`);
       
       return {
         availableUnits,
         totalUnits
       };
     } catch (error) {
-      console.error('Error getting available units:', error);
-      ErrorHandler.logError(error, 'get_available_units');
-      // Return fallback data
+      console.error('Error in fallback availability calculation:', error);
       const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
       return {
         availableUnits: Math.floor(totalUnits * 0.7),
@@ -179,50 +225,101 @@ export class InventoryService {
 
       const today = new Date().toISOString().split('T')[0];
       
-      // Get current occupancy from booking_units table
-      const { data: occupiedUnits, error } = await supabase
-        .from('booking_units')
+      try {
+        // Try to get current occupancy from booking_units table
+        const { data: occupiedUnits, error } = await supabase
+          .from('booking_units')
+          .select(`
+            booking_id,
+            check_in,
+            check_out,
+            status,
+            villa_inventory_id,
+            villa_inventory!inner(
+              villa_id,
+              unit_number,
+              villas!inner(
+                name as villa_name
+              )
+            ),
+            bookings!inner(
+              guest_name,
+              email,
+              phone,
+              guests
+            )
+          `)
+          .lte('check_in', today)
+          .gte('check_out', today)
+          .in('status', ['reserved', 'occupied']);
+
+        if (error) throw error;
+
+        return (occupiedUnits || []).map(unit => ({
+          villa_id: unit.villa_inventory.villa_id,
+          villa_name: unit.villa_inventory.villas.name,
+          unit_number: unit.villa_inventory.unit_number,
+          guest_name: unit.bookings.guest_name,
+          email: unit.bookings.email,
+          phone: unit.bookings.phone,
+          check_in: unit.check_in,
+          check_out: unit.check_out,
+          guests: unit.bookings.guests,
+          booking_id: unit.booking_id,
+          status: unit.status
+        }));
+      } catch (inventoryError) {
+        console.warn('Inventory system not available, using fallback method:', inventoryError);
+        return this.getCurrentOccupancyFallback();
+      }
+    } catch (error) {
+      console.error('Error fetching current occupancy:', error);
+      return [];
+    }
+  }
+
+  // Fallback method for current occupancy
+  private static async getCurrentOccupancyFallback(): Promise<OccupancyData[]> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get current occupancy from bookings table
+      const { data: bookings, error } = await supabase
+        .from('bookings')
         .select(`
           booking_id,
+          guest_name,
+          email,
+          phone,
           check_in,
           check_out,
+          guests,
           status,
-          villa_inventory_id,
-          villa_inventory!inner(
-            villa_id,
-            unit_number,
-            villas!inner(
-              name as villa_name
-            )
-          ),
-          bookings!inner(
-            guest_name,
-            email,
-            phone,
-            guests
-          )
+          villa_id,
+          villa_name
         `)
         .lte('check_in', today)
         .gte('check_out', today)
-        .in('status', ['reserved', 'occupied']);
+        .neq('status', 'cancelled')
+        .neq('status', 'no_show');
 
       if (error) throw error;
 
-      return (occupiedUnits || []).map(unit => ({
-        villa_id: unit.villa_inventory.villa_id,
-        villa_name: unit.villa_inventory.villas.name,
-        unit_number: unit.villa_inventory.unit_number,
-        guest_name: unit.bookings.guest_name,
-        email: unit.bookings.email,
-        phone: unit.bookings.phone,
-        check_in: unit.check_in,
-        check_out: unit.check_out,
-        guests: unit.bookings.guests,
-        booking_id: unit.booking_id,
-        status: unit.status
+      return (bookings || []).map(booking => ({
+        villa_id: booking.villa_id,
+        villa_name: booking.villa_name,
+        unit_number: this.generateUnitNumber(booking.villa_id, booking.booking_id),
+        guest_name: booking.guest_name,
+        email: booking.email,
+        phone: booking.phone,
+        check_in: booking.check_in,
+        check_out: booking.check_out,
+        guests: booking.guests,
+        booking_id: booking.booking_id,
+        status: booking.status
       }));
     } catch (error) {
-      console.error('Error fetching current occupancy:', error);
+      console.error('Error in fallback occupancy calculation:', error);
       return [];
     }
   }
