@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Users, DollarSign, MapPin, Star, Settings, Eye, Calendar, X, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { VillaService } from '../../services/villaService';
-import { InventoryService } from '../../services/inventoryService';
+import { SimpleOccupancyService } from '../../services/simpleOccupancyService';
 import { useToast } from '../common/Toast';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmDialog from '../common/ConfirmDialog';
@@ -49,16 +49,25 @@ const VillaManagement = () => {
             const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
             const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
             
-            // Get inventory data
+            // Get simple occupancy data
             let totalUnits = 1;
             let availableUnits = 1;
             
             try {
-              const inventory = await InventoryService.getAvailableUnits(villa.id, startOfMonth, endOfMonth);
-              totalUnits = inventory.totalUnits;
-              availableUnits = inventory.availableUnits;
-            } catch (inventoryError) {
-              console.warn('Inventory service failed, using defaults');
+              const today = new Date().toISOString().split('T')[0];
+              const occupancyData = await SimpleOccupancyService.getOccupancyForDate(today);
+              const villaData = occupancyData.find(item => item.villa_id === villa.id);
+              
+              if (villaData) {
+                totalUnits = villaData.total_units;
+                availableUnits = villaData.available_units;
+              } else {
+                // Use villa-specific defaults
+                totalUnits = villa.id === 'glass-cottage' ? 14 : 4;
+                availableUnits = Math.floor(totalUnits * 0.7); // 70% available
+              }
+            } catch (occupancyError) {
+              console.warn('Occupancy service failed, using defaults');
               // Use villa-specific defaults
               totalUnits = villa.id === 'glass-cottage' ? 14 : 4;
               availableUnits = Math.floor(totalUnits * 0.7); // 70% available

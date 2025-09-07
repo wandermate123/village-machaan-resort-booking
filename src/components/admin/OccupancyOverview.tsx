@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, Home, MapPin, Phone, Mail, Clock, ChevronLeft, ChevronRight, Filter, Download, Eye, X } from 'lucide-react';
-import { BookingService } from '../../services/bookingService';
+import { SimpleOccupancyService, SimpleOccupancyData } from '../../services/simpleOccupancyService';
 import { VillaService } from '../../services/villaService';
 import { useToast } from '../common/Toast';
 import LoadingSpinner from '../common/LoadingSpinner';

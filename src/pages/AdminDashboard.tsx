@@ -8,7 +8,7 @@ import VillaManagement from '../components/admin/VillaManagement';
 import PackageManagement from '../components/admin/PackageManagement';
 import UserManagement from '../components/admin/UserManagement';
 import RevenueReports from '../components/admin/RevenueReports';
-import OccupancyOverview from '../components/admin/OccupancyOverview';
+import SimpleOccupancyOverview from '../components/admin/SimpleOccupancyOverview';
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
           <Routes>
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/bookings" element={<BookingManagement />} />
-            <Route path="/occupancy" element={<OccupancyOverview />} />
+            <Route path="/occupancy" element={<SimpleOccupancyOverview />} />
             <Route path="/villas" element={<VillaManagement />} />
             <Route path="/packages" element={<PackageManagement />} />
             <Route path="/users" element={<UserManagement />} />
