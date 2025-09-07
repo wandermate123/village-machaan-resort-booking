@@ -202,17 +202,17 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
       ) : (
         <>
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          <div className="grid grid-cols-7 gap-1 mb-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="p-3 text-center font-medium text-primary-600 text-sm">
+              <div key={day} className="p-1 text-center font-medium text-primary-600 text-xs">
                 {day}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1">
             {days.map((day, index) => {
-              if (!day) return <div key={index} className="p-3"></div>;
+              if (!day) return <div key={index} className="p-1"></div>;
               
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth();
@@ -230,12 +230,12 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
                   onClick={() => !isPast && handleDateClick(day)}
                   disabled={isPast}
                   className={`
-                    p-2 text-sm rounded-lg transition-all duration-200 relative group min-h-[3rem] flex flex-col items-center justify-center
+                    p-1 text-xs rounded transition-all duration-200 relative group min-h-[2rem] flex flex-col items-center justify-center
                     ${isPast ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
                       isSelected ? 'bg-secondary-600 text-white shadow-lg' : 
                       isAvailable ? 'bg-success-100 text-success-700 hover:bg-success-200' : 
                       'bg-error-100 text-error-700 hover:bg-error-200'}
-                    ${isToday ? 'ring-2 ring-primary-400' : ''}
+                    ${isToday ? 'ring-1 ring-primary-400' : ''}
                   `}
                   title={unitInfo ? `${unitInfo.available}/${unitInfo.total} units available${dayBookings.length > 0 ? ` | ${dayBookings.length} booking(s)` : ''}` : ''}
                 >
@@ -246,7 +246,7 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
                     </span>
                   )}
                   {dayBookings.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 opacity-60"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 opacity-60"></div>
                   )}
                 </button>
               );
@@ -254,29 +254,29 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
           </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-center space-x-6 mt-6 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-success-100 rounded"></div>
+          <div className="flex items-center justify-center space-x-4 mt-4 text-xs">
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-success-100 rounded"></div>
               <span className="text-primary-700">Available</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-error-100 rounded"></div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-error-100 rounded"></div>
               <span className="text-primary-700">Booked</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-secondary-600 rounded"></div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-secondary-600 rounded"></div>
               <span className="text-primary-700">Selected</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-gray-100 rounded"></div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-gray-100 rounded"></div>
               <span className="text-primary-700">Past</span>
             </div>
           </div>
 
           {/* Selected Date Details */}
           {selectedDate && (
-            <div className="mt-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
-              <h4 className="font-semibold text-primary-950 mb-2">
+            <div className="mt-4 p-3 bg-primary-50 rounded-lg border border-primary-200">
+              <h4 className="font-semibold text-primary-950 mb-2 text-sm">
                 {new Date(selectedDate).toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   year: 'numeric', 
@@ -286,11 +286,11 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
               </h4>
               
               {unitCounts[selectedDate] && (
-                <div className="mb-4 p-3 bg-white rounded border">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="mb-3 p-2 bg-white rounded border">
+                  <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="text-center">
                       <p className="font-medium text-primary-950">{unitCounts[selectedDate].total}</p>
-                      <p className="text-primary-600">Total Units</p>
+                      <p className="text-primary-600">Total</p>
                     </div>
                     <div className="text-center">
                       <p className="font-medium text-success-600">{unitCounts[selectedDate].available}</p>
@@ -306,11 +306,11 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
 
               {/* Show bookings for selected date */}
               {bookings[selectedDate] && bookings[selectedDate].length > 0 && (
-                <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
-                  <h5 className="font-medium text-blue-800 mb-2">Current Bookings:</h5>
+                <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                  <h5 className="font-medium text-blue-800 mb-1 text-xs">Current Bookings:</h5>
                   <div className="space-y-1">
                     {bookings[selectedDate].map((booking: any, idx: number) => (
-                      <div key={idx} className="text-sm text-blue-700">
+                      <div key={idx} className="text-xs text-blue-700">
                         • {booking.guest_name} ({booking.guests} guests) - {booking.status}
                       </div>
                     ))}
@@ -318,28 +318,28 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ villaId }) 
                 </div>
               )}
               
-              <div className="flex space-x-2">
+              <div className="flex space-x-1">
                 <button 
                   onClick={handleBlockDate}
                   disabled={new Date(selectedDate) < new Date(new Date().toDateString())}
-                  className="bg-error-600 hover:bg-error-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors flex items-center gap-2"
+                  className="bg-error-600 hover:bg-error-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs transition-colors flex items-center gap-1"
                 >
                   <Block className="w-3 h-3" />
-                  Block Date
+                  Block
                 </button>
                 <button 
                   disabled={new Date(selectedDate) < new Date(new Date().toDateString())}
-                  className="bg-primary-800 hover:bg-primary-900 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors flex items-center gap-2"
+                  className="bg-primary-800 hover:bg-primary-900 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs transition-colors flex items-center gap-1"
                 >
                   <DollarSign className="w-3 h-3" />
-                  Set Special Rate
+                  Rate
                 </button>
                 <button 
                   disabled={new Date(selectedDate) < new Date(new Date().toDateString())}
-                  className="bg-secondary-600 hover:bg-secondary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors flex items-center gap-2"
+                  className="bg-secondary-600 hover:bg-secondary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs transition-colors flex items-center gap-1"
                 >
                   <Settings className="w-3 h-3" />
-                  Manage Units
+                  Units
                 </button>
               </div>
             </div>

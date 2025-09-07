@@ -194,19 +194,131 @@ const DateVillaSelection = () => {
     const days = generateCalendar(currentMonth, currentYear);
     const today = new Date().toISOString().split('T')[0];
     
+    // Define images for each month
+    const monthImages = {
+      0: '/images/safari/tiger-safari.jpg', // January - Tiger
+      1: '/images/safari/tiger-safari.jpg', // February - Tiger
+      2: '/images/safari/tiger-safari.jpg', // March - Tiger
+      3: '/images/safari/tiger-safari.jpg', // April - Tiger
+      4: '/images/safari/tiger-safari.jpg', // May - Tiger
+      5: '/images/safari/tiger-safari.jpg', // June - Tiger
+      6: '/images/safari/tiger-safari.jpg', // July - Tiger
+      7: '/images/safari/tiger-safari.jpg', // August - Tiger
+      8: '/images/safari/tiger-safari.jpg', // September - Tiger
+      9: '/images/safari/tiger-safari.jpg', // October - Black Panther
+      10: '/images/safari/tiger-safari.jpg', // November - Tree
+      11: '/images/safari/tiger-safari.jpg'  // December - Tiger
+    };
+    
     return (
-      <div className="bg-white border border-gray-200 p-4 min-w-[280px]">
-        <div className="text-center mb-4">
-          <h3 className="font-medium text-gray-800">{months[currentMonth]} {currentYear}</h3>
+      <div 
+        className="relative bg-white"
+        style={{
+          width: '225px',
+          height: '310px',
+          border: '0.5px solid #3F3E3E',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* Tree Image - positioned exactly as specified */}
+        <div 
+          className="absolute"
+          style={{
+            width: '105.47px',
+            height: '121.01px',
+            left: '51.53px',
+            top: '11.3px',
+            transform: 'rotate(-90deg)',
+            backgroundImage: `url(${monthImages[currentMonth]})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+        
+        {/* Month Name - positioned to avoid image overlap */}
+        <div 
+          className="absolute"
+          style={{
+            width: '128px',
+            height: '31px',
+            left: 'calc(50% - 128px/2 + 0.5px)',
+            top: '140px',
+            fontFamily: 'Rethink Sans, sans-serif',
+            fontStyle: 'normal',
+            fontWeight: 700,
+            fontSize: '24px',
+            lineHeight: '31px',
+            textAlign: 'center',
+            letterSpacing: '0.01em',
+            color: '#3F3E3E'
+          }}
+        >
+          {months[currentMonth].toLowerCase()}
         </div>
         
-        <div className="grid grid-cols-7 gap-1 text-center text-sm">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-            <div key={day} className="p-2 font-medium text-gray-600">{day}</div>
-          ))}
+        {/* Calendar Grid Container - positioned to accommodate month name */}
+        <div 
+          className="absolute"
+          style={{
+            width: '148px',
+            height: '135px',
+            left: 'calc(50% - 148px/2 + 0.5px)',
+            top: '185px'
+          }}
+        >
+          {/* Days of Week Headers */}
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => {
+            const positions = [
+              { left: '2px', width: '10px' },   // S
+              { left: '22px', width: '14px' },  // M
+              { left: '46px', width: '10px' },  // T
+              { left: '66px', width: '16px' },  // W
+              { left: '92px', width: '10px' },  // T
+              { left: '114.5px', width: '9px' }, // F
+              { left: '136px', width: '10px' }  // S
+            ];
+            
+            return (
+              <div
+                key={day}
+                className="absolute"
+                style={{
+                  ...positions[index],
+                  height: '21px',
+                  top: '0px',
+                  fontFamily: 'Rethink Sans, sans-serif',
+                  fontStyle: 'normal',
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  lineHeight: '21px',
+                  textAlign: 'center',
+                  letterSpacing: '0.01em',
+                  color: '#3F3E3E'
+                }}
+              >
+                {day}
+              </div>
+            );
+          })}
           
+          {/* Calendar Dates */}
           {days.map((day, index) => {
-            if (!day) return <div key={index} className="p-2"></div>;
+            if (!day) return null;
+            
+            // Calculate grid position
+            const row = Math.floor(index / 7);
+            const col = index % 7;
+            
+            // Calculate exact positioning based on the CSS specifications
+            const leftPositions = [0, 22, 46, 66, 92, 114.5, 136];
+            const topPositions = [25, 44, 63, 82, 101, 120];
+            
+            const left = leftPositions[col];
+            const top = topPositions[row] || 120;
+            
+            // Calculate width based on number of digits
+            const width = day.toString().length === 1 ? '7px' : '14px';
             
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isSelected = dateStr === selectedDates.arrival || dateStr === selectedDates.departure;
@@ -220,11 +332,27 @@ const DateVillaSelection = () => {
                 key={day}
                 onClick={() => !isPast && handleDateClick(day, currentMonth, currentYear)}
                 disabled={isPast}
-                className={`p-2 text-sm rounded hover:bg-gray-100 transition-colors ${
-                  isPast ? 'text-gray-300 cursor-not-allowed' :
-                  isSelected ? 'bg-black text-white' : 
-                  isInRange ? 'bg-gray-200' : ''
-                }`}
+                className="absolute"
+                style={{
+                  left: `${left}px`,
+                  top: `${top}px`,
+                  width: width,
+                  height: '15px',
+                  fontFamily: 'Quicksand, sans-serif',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  textAlign: 'center',
+                  letterSpacing: '0.01em',
+                  color: isPast ? '#CCCCCC' : isSelected ? '#FFFFFF' : '#3F3E3E',
+                  backgroundColor: isSelected ? '#3F3E3E' : isInRange ? '#E5E5E5' : 'transparent',
+                  border: 'none',
+                  cursor: isPast ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
                 {day}
               </button>
@@ -291,7 +419,7 @@ const DateVillaSelection = () => {
           {/* Calendar Section */}
           <div className="lg:col-span-2">
             <div className="bg-white border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <button 
                   onClick={() => navigateMonth('prev')}
                   className="p-2 hover:bg-gray-100 rounded"
@@ -307,7 +435,7 @@ const DateVillaSelection = () => {
                 </button>
               </div>
               
-              <div className="flex space-x-4 overflow-x-auto">
+              <div className="flex space-x-4 overflow-x-auto justify-center">
                 {[0, 1, 2].map(offset => renderCalendar(offset))}
               </div>
             </div>
@@ -517,14 +645,24 @@ const DateVillaSelection = () => {
                   {/* Amenities Grid */}
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-800 mb-3">Amenities</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedVilla.amenities?.slice(0, 8).map((amenity, index) => (
-                        <div key={index} className="flex items-center text-sm text-gray-600">
-                          <Star className="w-3 h-3 mr-2 text-secondary-600" />
-                          <span>{amenity}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {selectedVilla.id === 'kingfisher-villa' ? (
+                      <div className="w-full">
+                        <img 
+                          src="/images/kingfisher/amenities-icons.png" 
+                          alt="Kingfisher villa amenities" 
+                          className="w-full h-auto object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedVilla.amenities?.slice(0, 8).map((amenity, index) => (
+                          <div key={index} className="flex items-center text-sm text-gray-600">
+                            <Star className="w-3 h-3 mr-2 text-secondary-600" />
+                            <span>{amenity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Availability Status */}
