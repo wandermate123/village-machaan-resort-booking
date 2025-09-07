@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, Lock, Shield, MapPin, CheckCircle } from 'lucide-react';
 import { PaymentService } from '../../services/paymentService';
-import { DemoPaymentService } from '../../services/demoPaymentService';
-import DemoPaymentForm from './DemoPaymentForm';
 import LoadingSpinner from '../common/LoadingSpinner';
 import BookingProgressLoader from '../common/BookingProgressLoader';
 import { BookingService } from '../../services/bookingService';
@@ -34,6 +32,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showHalfPaymentConfirm, setShowHalfPaymentConfirm] = useState(false);
   const [currentStep, setCurrentStep] = useState<'processing' | 'updating' | 'emailing' | 'completing'>('processing');
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: ''
+  });
 
   const handleHalfPayment = async () => {
     setIsProcessing(true);
@@ -127,6 +131,85 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const handleConfirmHalfPayment = () => {
     setShowHalfPaymentConfirm(false);
     handleHalfPayment();
+  };
+
+  const handleOnlinePayment = async () => {
+    setIsProcessing(true);
+    setCurrentStep('processing');
+    
+    try {
+      // Validate card details
+      if (!cardDetails.cardNumber || !cardDetails.expiryDate || !cardDetails.cvv || !cardDetails.cardholderName) {
+        throw new Error('Please fill in all card details');
+      }
+
+      // Process payment using PaymentService
+      setCurrentStep('updating');
+      const paymentResult = await PaymentService.processCardPayment({
+        amount: amount,
+        currency: 'INR',
+        cardNumber: cardDetails.cardNumber,
+        expiryDate: cardDetails.expiryDate,
+        cvv: cardDetails.cvv,
+        cardholderName: cardDetails.cardholderName,
+        bookingId: supabaseBookingId || bookingId
+      });
+
+      if (!paymentResult.success) {
+        throw new Error(paymentResult.error || 'Payment failed');
+      }
+
+      // Update booking status
+      const identifier = supabaseBookingId || bookingId;
+      if (identifier) {
+        const result = await BookingService.updateBooking(identifier, {
+          payment_status: 'paid',
+          status: 'confirmed',
+          paid_at: new Date().toISOString(),
+          payment_method: 'online',
+          payment_reference: paymentResult.paymentId,
+          admin_notes: `Full payment received: ₹${amount.toLocaleString()}. Payment method: Online Card Payment.`
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update booking');
+        }
+        
+        console.log('✅ Online payment booking updated successfully');
+      }
+
+      // Send confirmation email
+      setCurrentStep('emailing');
+      try {
+        await EmailService.sendBookingConfirmation({
+          bookingId: identifier || bookingId,
+          guestName: `${guestDetails.firstName} ${guestDetails.lastName}`,
+          email: guestDetails.email,
+          checkIn: new Date().toISOString().split('T')[0],
+          checkOut: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          villaName: 'Selected Villa',
+          totalAmount: amount,
+          advanceAmount: 0,
+          remainingAmount: 0
+        });
+        console.log('✅ Online payment confirmation email sent');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send confirmation email:', emailError);
+      }
+
+      // Complete
+      setCurrentStep('completing');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('✅ Online payment processed successfully');
+      onPaymentSuccess(paymentResult.paymentId);
+      
+    } catch (error) {
+      console.error('❌ Online payment failed:', error);
+      onPaymentError(error instanceof Error ? error.message : 'Payment failed');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Show progress loader when processing half payment
@@ -284,14 +367,123 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       {/* Online Payment Form */}
       {paymentMethod === 'online' && (
-        <DemoPaymentForm
-          amount={amount}
-          bookingId={bookingId}
-          supabaseBookingId={supabaseBookingId}
-          guestDetails={guestDetails}
-          onPaymentSuccess={onPaymentSuccess}
-          onPaymentError={onPaymentError}
-        />
+        <div className="space-y-6">
+          {/* Card Details Form */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-primary-100">
+            <div className="flex items-center space-x-3 mb-6">
+              <CreditCard className="w-6 h-6 text-primary-600" />
+              <h3 className="text-lg font-semibold text-primary-950">Card Details</h3>
+            </div>
+
+            <div className="space-y-4">
+              {/* Card Number */}
+              <div>
+                <label className="block text-sm font-medium text-primary-700 mb-2">
+                  Card Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="1234 5678 9012 3456"
+                  value={cardDetails.cardNumber}
+                  onChange={(e) => setCardDetails(prev => ({ ...prev, cardNumber: e.target.value }))}
+                  className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  maxLength={19}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Expiry Date */}
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MM/YY"
+                    value={cardDetails.expiryDate}
+                    onChange={(e) => setCardDetails(prev => ({ ...prev, expiryDate: e.target.value }))}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    maxLength={5}
+                  />
+                </div>
+
+                {/* CVV */}
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    CVV
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    value={cardDetails.cvv}
+                    onChange={(e) => setCardDetails(prev => ({ ...prev, cvv: e.target.value }))}
+                    className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+
+              {/* Cardholder Name */}
+              <div>
+                <label className="block text-sm font-medium text-primary-700 mb-2">
+                  Cardholder Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  value={cardDetails.cardholderName}
+                  onChange={(e) => setCardDetails(prev => ({ ...prev, cardholderName: e.target.value }))}
+                  className="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <Shield className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-green-800">Secure Payment</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Your payment information is encrypted and secure. We use industry-standard SSL encryption to protect your data.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Button */}
+          <button
+            onClick={handleOnlinePayment}
+            disabled={isProcessing}
+            className="w-full bg-primary-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+          >
+            {isProcessing ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span>Processing Payment...</span>
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-5 h-5" />
+                <span>Pay ₹{amount.toLocaleString()}</span>
+              </>
+            )}
+          </button>
+
+          {/* Progress Loader for Online Payment */}
+          {isProcessing && (
+            <BookingProgressLoader 
+              currentStep={currentStep}
+              steps={[
+                { key: 'processing', label: 'Processing Payment', icon: CreditCard },
+                { key: 'updating', label: 'Updating Booking', icon: CheckCircle },
+                { key: 'emailing', label: 'Sending Confirmation', icon: CheckCircle },
+                { key: 'completing', label: 'Completing Booking', icon: CheckCircle }
+              ]}
+            />
+          )}
+        </div>
       )}
     </div>
   );

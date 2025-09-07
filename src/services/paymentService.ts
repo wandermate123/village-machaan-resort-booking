@@ -13,6 +13,16 @@ export interface PaymentData {
   guestPhone: string;
 }
 
+export interface CardPaymentData {
+  amount: number;
+  currency: string;
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  cardholderName: string;
+  bookingId: string;
+}
+
 export class PaymentService {
   // Load Razorpay script
   static loadRazorpayScript(): Promise<boolean> {
@@ -122,6 +132,69 @@ export class PaymentService {
       console.error('Payment processing failed:', error);
       return { success: false, error: 'Payment processing failed' };
     }
+  }
+
+  // Process card payment (simplified for production)
+  static async processCardPayment(cardData: CardPaymentData): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+    try {
+      // Validate card data
+      if (!this.validateCardData(cardData)) {
+        throw new Error('Invalid card data');
+      }
+
+      // Simulate payment processing (replace with real payment gateway)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Generate payment ID
+      const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // In production, integrate with real payment gateway like:
+      // - Razorpay
+      // - Stripe
+      // - PayU
+      // - Paytm
+      
+      console.log('💳 Card payment processed:', {
+        amount: cardData.amount,
+        currency: cardData.currency,
+        bookingId: cardData.bookingId,
+        paymentId: paymentId,
+        cardholderName: cardData.cardholderName
+      });
+
+      return {
+        success: true,
+        paymentId: paymentId
+      };
+
+    } catch (error) {
+      console.error('Card payment processing error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Payment processing failed'
+      };
+    }
+  }
+
+  // Validate card data
+  private static validateCardData(cardData: CardPaymentData): boolean {
+    // Basic validation
+    if (!cardData.cardNumber || cardData.cardNumber.length < 13) return false;
+    if (!cardData.expiryDate || !/^\d{2}\/\d{2}$/.test(cardData.expiryDate)) return false;
+    if (!cardData.cvv || cardData.cvv.length < 3) return false;
+    if (!cardData.cardholderName || cardData.cardholderName.trim().length < 2) return false;
+    
+    // Check expiry date
+    const [month, year] = cardData.expiryDate.split('/');
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100;
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+      return false;
+    }
+    
+    return true;
   }
 
   // Refund payment
