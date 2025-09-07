@@ -106,11 +106,9 @@ export class InventoryService {
   // Get available units for a date range
   static async getAvailableUnits(villaId: string, checkIn: string, checkOut: string) {
     try {
-      // Get total units for this villa from inventory config
-      const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
-      
       if (!isSupabaseConfigured || !supabase) {
         // Demo mode - simulate some bookings
+        const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
         const simulatedBookings = Math.floor(Math.random() * Math.min(3, totalUnits));
         return {
           availableUnits: Math.max(0, totalUnits - simulatedBookings),
@@ -118,25 +116,50 @@ export class InventoryService {
         };
       }
 
-      // Count overlapping bookings
-      const { data: overlappingBookings, error } = await supabase
-        .from('bookings')
+      // Get total units for this villa
+      const { data: totalUnitsData, error: unitsError } = await supabase
+        .from('villa_inventory')
         .select('id')
         .eq('villa_id', villaId)
-        .neq('status', 'cancelled')
-        .neq('payment_status', 'failed')
+        .eq('status', 'available');
+
+      if (unitsError) throw unitsError;
+
+      const totalUnits = totalUnitsData?.length || 0;
+
+      // Get units that are blocked or occupied during the date range
+      const { data: occupiedUnits, error: occupiedError } = await supabase
+        .from('booking_units')
+        .select('villa_inventory_id')
+        .eq('villa_id', villaId)
+        .in('status', ['reserved', 'occupied'])
         .or(`and(check_in.lte.${checkIn},check_out.gt.${checkIn}),and(check_in.lt.${checkOut},check_out.gte.${checkOut}),and(check_in.gte.${checkIn},check_out.lte.${checkOut})`);
 
-      if (error) throw error;
+      if (occupiedError) throw occupiedError;
 
-      const bookedUnits = overlappingBookings?.length || 0;
-      const availableUnits = Math.max(0, totalUnits - bookedUnits);
+      // Get units blocked for maintenance
+      const { data: blockedUnits, error: blockedError } = await supabase
+        .from('inventory_blocks')
+        .select('villa_inventory_id')
+        .eq('villa_id', villaId)
+        .lte('block_date', checkOut)
+        .gte('block_date', checkIn);
+
+      if (blockedError) throw blockedError;
+
+      const occupiedCount = occupiedUnits?.length || 0;
+      const blockedCount = blockedUnits?.length || 0;
+      const unavailableUnits = occupiedCount + blockedCount;
+      const availableUnits = Math.max(0, totalUnits - unavailableUnits);
+      
+      console.log(`📊 Availability for ${villaId}: ${availableUnits}/${totalUnits} units available`);
       
       return {
         availableUnits,
         totalUnits
       };
     } catch (error) {
+      console.error('Error getting available units:', error);
       ErrorHandler.logError(error, 'get_available_units');
       // Return fallback data
       const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
@@ -156,39 +179,47 @@ export class InventoryService {
 
       const today = new Date().toISOString().split('T')[0];
       
-      const { data: bookings, error } = await supabase
-        .from('bookings')
+      // Get current occupancy from booking_units table
+      const { data: occupiedUnits, error } = await supabase
+        .from('booking_units')
         .select(`
           booking_id,
-          guest_name,
-          email,
-          phone,
           check_in,
           check_out,
-          guests,
           status,
-          villa_id,
-          villa_name
+          villa_inventory_id,
+          villa_inventory!inner(
+            villa_id,
+            unit_number,
+            villas!inner(
+              name as villa_name
+            )
+          ),
+          bookings!inner(
+            guest_name,
+            email,
+            phone,
+            guests
+          )
         `)
         .lte('check_in', today)
         .gte('check_out', today)
-        .neq('status', 'cancelled')
-        .neq('status', 'no_show');
+        .in('status', ['reserved', 'occupied']);
 
       if (error) throw error;
 
-      return (bookings || []).map(booking => ({
-        villa_id: booking.villa_id,
-        villa_name: booking.villa_name,
-        unit_number: this.generateUnitNumber(booking.villa_id, booking.booking_id),
-        guest_name: booking.guest_name,
-        email: booking.email,
-        phone: booking.phone,
-        check_in: booking.check_in,
-        check_out: booking.check_out,
-        guests: booking.guests,
-        booking_id: booking.booking_id,
-        status: booking.status
+      return (occupiedUnits || []).map(unit => ({
+        villa_id: unit.villa_inventory.villa_id,
+        villa_name: unit.villa_inventory.villas.name,
+        unit_number: unit.villa_inventory.unit_number,
+        guest_name: unit.bookings.guest_name,
+        email: unit.bookings.email,
+        phone: unit.bookings.phone,
+        check_in: unit.check_in,
+        check_out: unit.check_out,
+        guests: unit.bookings.guests,
+        booking_id: unit.booking_id,
+        status: unit.status
       }));
     } catch (error) {
       console.error('Error fetching current occupancy:', error);
@@ -345,7 +376,7 @@ export class InventoryService {
         };
       }
 
-      // Get total units
+      // Get total available units
       const { data: totalUnits, error: unitsError } = await supabase
         .from('villa_inventory')
         .select('id')
@@ -353,7 +384,7 @@ export class InventoryService {
 
       if (unitsError) throw unitsError;
 
-      // Get occupied units for the date
+      // Get occupied units for the specific date
       const { data: occupiedUnits, error: occupiedError } = await supabase
         .from('booking_units')
         .select('villa_inventory_id')
@@ -363,10 +394,21 @@ export class InventoryService {
 
       if (occupiedError) throw occupiedError;
 
+      // Get blocked units for the specific date
+      const { data: blockedUnits, error: blockedError } = await supabase
+        .from('inventory_blocks')
+        .select('villa_inventory_id')
+        .eq('block_date', date);
+
+      if (blockedError) throw blockedError;
+
       const total = totalUnits?.length || 0;
       const occupied = occupiedUnits?.length || 0;
-      const available = total - occupied;
+      const blocked = blockedUnits?.length || 0;
+      const available = total - occupied - blocked;
       const occupancyRate = total > 0 ? Math.round((occupied / total) * 100) : 0;
+
+      console.log(`📊 Occupancy stats for ${date}: ${occupied}/${total} occupied, ${blocked} blocked, ${available} available`);
 
       return {
         total,

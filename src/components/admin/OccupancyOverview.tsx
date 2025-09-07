@@ -63,57 +63,51 @@ const OccupancyOverview = () => {
       const occupancyPromises = dates.map(async (date) => {
         const dateStr = date.toISOString().split('T')[0];
         
-        // Get all bookings for this date
-        const bookings = await BookingService.getBookings({
-          dateFrom: dateStr,
-          dateTo: dateStr
-        });
-
-        // Filter bookings that are active on this date
-        const activeBookings = bookings.filter((booking: any) => {
-          const checkIn = new Date(booking.check_in);
-          const checkOut = new Date(booking.check_out);
-          const currentDate = new Date(dateStr);
-          
-          return currentDate >= checkIn && currentDate < checkOut && 
-                 booking.status !== 'cancelled' && booking.status !== 'no_show';
-        });
-
         // Group by villa
         const villaOccupancy: OccupancyData['villas'] = {};
         
-        // Initialize all villas
+        // Initialize all villas with real data from InventoryService
         for (const villa of villas) {
           if (villaFilter === 'all' || villaFilter === villa.id) {
-            const totalUnits = getVillaTotalUnits(villa.id);
-            villaOccupancy[villa.id] = {
-              villaName: villa.name,
-              totalUnits,
-              occupiedUnits: 0,
-              availableUnits: totalUnits,
-              guests: []
-            };
+            try {
+              // Get real availability data
+              const units = await InventoryService.getAvailableUnits(villa.id, dateStr, dateStr);
+              
+              // Get occupancy data for this date
+              const occupancyForDate = await InventoryService.getOccupancyForDates(dateStr, dateStr);
+              const villaOccupancyData = occupancyForDate.filter(occ => occ.villa_id === villa.id);
+              
+              villaOccupancy[villa.id] = {
+                villaName: villa.name,
+                totalUnits: units.totalUnits,
+                occupiedUnits: villaOccupancyData.length,
+                availableUnits: units.availableUnits,
+                guests: villaOccupancyData.map(occ => ({
+                  bookingId: occ.booking_id,
+                  guestName: occ.guest_name,
+                  email: occ.email,
+                  phone: occ.phone,
+                  guests: occ.guests,
+                  checkIn: occ.check_in,
+                  checkOut: occ.check_out,
+                  status: occ.status,
+                  unitNumber: occ.unit_number
+                }))
+              };
+            } catch (error) {
+              console.error(`Error fetching data for villa ${villa.id} on ${dateStr}:`, error);
+              // Fallback to basic data
+              const totalUnits = getVillaTotalUnits(villa.id);
+              villaOccupancy[villa.id] = {
+                villaName: villa.name,
+                totalUnits,
+                occupiedUnits: 0,
+                availableUnits: totalUnits,
+                guests: []
+              };
+            }
           }
         }
-
-        // Add occupied units and guest details
-        activeBookings.forEach((booking: any) => {
-          if (villaOccupancy[booking.villa_id]) {
-            villaOccupancy[booking.villa_id].occupiedUnits += 1;
-            villaOccupancy[booking.villa_id].availableUnits -= 1;
-            villaOccupancy[booking.villa_id].guests.push({
-              bookingId: booking.booking_id,
-              guestName: booking.guest_name,
-              email: booking.email,
-              phone: booking.phone,
-              guests: booking.guests,
-              checkIn: booking.check_in,
-              checkOut: booking.check_out,
-              status: booking.status,
-              unitNumber: generateUnitNumber(booking.villa_id, booking.id)
-            });
-          }
-        });
 
         return {
           date: dateStr,
@@ -123,7 +117,9 @@ const OccupancyOverview = () => {
 
       const occupancyResults = await Promise.all(occupancyPromises);
       setOccupancyData(occupancyResults);
+      console.log('📊 Occupancy data loaded successfully:', occupancyResults);
     } catch (error) {
+      console.error('Error fetching occupancy data:', error);
       showError('Loading Error', 'Failed to load occupancy data');
     } finally {
       setLoading(false);
