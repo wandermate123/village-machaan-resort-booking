@@ -2,6 +2,14 @@
 
 A comprehensive resort booking system built with React, TypeScript, and Supabase.
 
+## 🎯 Latest Updates
+- ✅ Enhanced payment processing with progress loader
+- ✅ Simplified availability check (Available/Not Available)
+- ✅ Half-payment functionality with automatic status updates
+- ✅ Admin dashboard with booking management
+- ✅ Mobile-responsive design
+- ✅ Vercel deployment ready
+
 ## 🚀 Quick Start
 
 ### 1. Database Setup
