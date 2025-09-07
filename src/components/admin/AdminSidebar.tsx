@@ -10,7 +10,8 @@ import {
   Menu, 
   X, 
   TreePine,
-  Building
+  Building,
+  MessageSquare
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -25,6 +26,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, setIsOpen }) => {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
     { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
     { icon: Building, label: 'Occupancy', path: '/admin/occupancy' },
+    { icon: MessageSquare, label: 'Safari Queries', path: '/admin/safari-queries' },
     { icon: Home, label: 'Villas', path: '/admin/villas' },
     { icon: Package, label: 'Packages', path: '/admin/packages' },
     { icon: Users, label: 'Users', path: '/admin/users' },

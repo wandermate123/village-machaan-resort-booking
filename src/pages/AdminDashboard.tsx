@@ -9,6 +9,7 @@ import PackageManagement from '../components/admin/PackageManagement';
 import UserManagement from '../components/admin/UserManagement';
 import RevenueReports from '../components/admin/RevenueReports';
 import SimpleOccupancyOverview from '../components/admin/SimpleOccupancyOverview';
+import SafariQueriesManagement from '../components/admin/SafariQueriesManagement';
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,6 +26,7 @@ const AdminDashboard = () => {
             <Route path="/" element={<DashboardOverview />} />
             <Route path="/bookings" element={<BookingManagement />} />
             <Route path="/occupancy" element={<SimpleOccupancyOverview />} />
+            <Route path="/safari-queries" element={<SafariQueriesManagement />} />
             <Route path="/villas" element={<VillaManagement />} />
             <Route path="/packages" element={<PackageManagement />} />
             <Route path="/users" element={<UserManagement />} />

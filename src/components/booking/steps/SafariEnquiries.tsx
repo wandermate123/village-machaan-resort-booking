@@ -3,6 +3,7 @@ import { useBooking } from '../../../contexts/BookingContext';
 import { ChevronLeft, ChevronRight, X, ArrowLeft, ArrowRight, Info, Clock, Users, Calendar } from 'lucide-react';
 import { useToast } from '../../common/Toast';
 import { SafariService } from '../../../services/safariService';
+import { SafariQueriesService } from '../../../services/safariQueriesService';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 const SafariEnquiries = () => {
@@ -103,7 +104,7 @@ const SafariEnquiries = () => {
     processSelectedSafaris();
   };
 
-  const processSelectedSafaris = () => {
+  const processSelectedSafaris = async () => {
     // Process safari bookings and add to context
     const selectedSafaris = [];
     const incompleteSelections = [];
@@ -135,6 +136,39 @@ const SafariEnquiries = () => {
     if (incompleteSelections.length > 0) {
       showError('Incomplete Selection', `Please select date and timing for: ${incompleteSelections.join(', ')}`);
       return;
+    }
+
+    // Save safari queries to database
+    if (selectedSafaris.length > 0) {
+      try {
+        const queryPromises = selectedSafaris.map(async (safari) => {
+          const queryData = {
+            booking_id: state.bookingId || `temp_${Date.now()}`,
+            guest_name: `${state.guestDetails.firstName} ${state.guestDetails.lastName}`,
+            email: state.guestDetails.email,
+            phone: state.guestDetails.phone,
+            safari_option_id: safari.id,
+            safari_name: safari.name,
+            preferred_date: safari.date,
+            preferred_timing: safari.timing,
+            number_of_persons: safari.persons,
+            special_requirements: state.specialRequests || '',
+            status: 'pending' as const
+          };
+
+          return SafariQueriesService.createSafariQuery(queryData);
+        });
+
+        const results = await Promise.all(queryPromises);
+        const successCount = results.filter(r => r.success).length;
+        
+        if (successCount > 0) {
+          showSuccess('Safari Inquiry Submitted', `Successfully submitted ${successCount} safari inquiry(ies). Our team will review and respond soon.`);
+        }
+      } catch (error) {
+        console.error('Error saving safari queries:', error);
+        showError('Submission Error', 'Failed to submit safari inquiries. Please try again.');
+      }
     }
 
     // Update context with selected safaris
