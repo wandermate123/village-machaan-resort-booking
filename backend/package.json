@@ -1,0 +1,13 @@
+{
+  "name": "village-machaan-backend",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "helmet": "^8.1.0",
+    "express-rate-limit": "^8.0.1",
+    "express-validator": "^7.2.1"
+  }
+}
