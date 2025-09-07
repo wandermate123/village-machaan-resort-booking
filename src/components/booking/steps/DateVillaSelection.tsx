@@ -95,7 +95,7 @@ const DateVillaSelection = () => {
       if (available.length === 0) {
         showError('No Availability', 'No villas available for selected dates. Please try different dates.');
       } else {
-        showSuccess('Availability Checked', `Found availability for ${available.length} villa type(s)`);
+        showSuccess('Availability Checked', 'Villa availability checked successfully');
       }
     } catch (error) {
       showError('Availability Check Failed', 'Failed to check villa availability. Please try again.');
@@ -428,90 +428,30 @@ const DateVillaSelection = () => {
             <div className="bg-white border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Availability Results</h3>
               
-              {/* Check-in/Check-out Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-blue-800">Check-in:</span>
-                    <div className="text-blue-700">
-                      {new Date(availabilityResults.checkIn).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </div>
-                    <div className="text-blue-600 text-xs">1:30 PM onwards</div>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-800">Check-out:</span>
-                    <div className="text-blue-700">
-                      {new Date(availabilityResults.checkOut).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </div>
-                    <div className="text-blue-600 text-xs">11:30 AM checkout</div>
-                  </div>
-                </div>
-                <div className="text-center mt-3 pt-3 border-t border-blue-200">
-                  <span className="font-semibold text-blue-800">
-                    {availabilityResults.nights} Night{availabilityResults.nights > 1 ? 's' : ''} Stay
-                  </span>
-                </div>
-              </div>
-
-              {/* Villa Availability */}
-              <div className="space-y-4">
+              {/* Simple Villa Availability */}
+              <div className="space-y-3">
                 {availabilityResults.villas.map((villa) => (
                   <div key={villa.id} className={`border-2 rounded-lg p-4 transition-all ${
                     villa.available 
                       ? 'border-green-200 bg-green-50' 
                       : 'border-red-200 bg-red-50'
                   }`}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="text-lg font-semibold text-gray-800">{villa.name}</h4>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            villa.available 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {villa.available ? 'Available' : 'Not Available'}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                          <div>
-                            <span className="font-medium">Room Type:</span>
-                            <div>{villa.roomType}</div>
-                          </div>
-                          <div>
-                            <span className="font-medium">Max Guests:</span>
-                            <div>{villa.max_guests} guests</div>
-                          </div>
-                          <div>
-                            <span className="font-medium">Availability:</span>
-                            <div className={`font-semibold ${villa.available ? 'text-green-600' : 'text-red-600'}`}>
-                              {villa.available ? 'Available' : 'Fully Booked'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="font-medium">Rate per Night:</span>
-                            <div className="font-semibold text-gray-800">₹{villa.base_price.toLocaleString()}</div>
-                          </div>
-                        </div>
-                        
-                        <p className="text-gray-600 text-sm">{villa.description}</p>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-3">
+                        <h4 className="text-lg font-semibold text-gray-800">{villa.name}</h4>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          villa.available 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {villa.available ? 'Available' : 'Not Available'}
+                        </span>
                       </div>
                       
                       {villa.available && (
                         <button
                           onClick={() => setSelectedVillaId(villa.id)}
-                          className={`ml-4 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                             selectedVillaId === villa.id
                               ? 'bg-blue-600 text-white'
                               : 'bg-gray-800 text-white hover:bg-gray-700'
@@ -521,19 +461,6 @@ const DateVillaSelection = () => {
                         </button>
                       )}
                     </div>
-                    
-                    {villa.available && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-gray-800">
-                            Total: ₹{(villa.base_price * availabilityResults.nights).toLocaleString()}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            for {availabilityResults.nights} night{availabilityResults.nights > 1 ? 's' : ''}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
