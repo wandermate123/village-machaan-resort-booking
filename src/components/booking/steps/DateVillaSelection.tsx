@@ -212,10 +212,10 @@ const DateVillaSelection = () => {
     
     return (
       <div 
-        className="relative bg-white"
+        className="relative bg-white flex-shrink-0"
         style={{
-          width: '225px',
-          height: '310px',
+          width: '200px',
+          height: '280px',
           border: '0.5px solid #3F3E3E',
           boxSizing: 'border-box'
         }}
@@ -224,10 +224,10 @@ const DateVillaSelection = () => {
         <div 
           className="absolute"
           style={{
-            width: '105.47px',
-            height: '121.01px',
-            left: '51.53px',
-            top: '11.3px',
+            width: '90px',
+            height: '100px',
+            left: '45px',
+            top: '10px',
             transform: 'rotate(-90deg)',
             backgroundImage: `url(${monthImages[currentMonth]})`,
             backgroundSize: 'cover',
@@ -240,15 +240,15 @@ const DateVillaSelection = () => {
         <div 
           className="absolute"
           style={{
-            width: '128px',
-            height: '31px',
-            left: 'calc(50% - 128px/2 + 0.5px)',
-            top: '140px',
+            width: '120px',
+            height: '28px',
+            left: 'calc(50% - 120px/2)',
+            top: '120px',
             fontFamily: 'Rethink Sans, sans-serif',
             fontStyle: 'normal',
             fontWeight: 700,
-            fontSize: '24px',
-            lineHeight: '31px',
+            fontSize: '20px',
+            lineHeight: '28px',
             textAlign: 'center',
             letterSpacing: '0.01em',
             color: '#3F3E3E'
@@ -261,22 +261,22 @@ const DateVillaSelection = () => {
         <div 
           className="absolute"
           style={{
-            width: '148px',
-            height: '135px',
-            left: 'calc(50% - 148px/2 + 0.5px)',
-            top: '185px'
+            width: '130px',
+            height: '120px',
+            left: 'calc(50% - 130px/2)',
+            top: '160px'
           }}
         >
           {/* Days of Week Headers */}
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => {
             const positions = [
-              { left: '2px', width: '10px' },   // S
-              { left: '22px', width: '14px' },  // M
-              { left: '46px', width: '10px' },  // T
-              { left: '66px', width: '16px' },  // W
-              { left: '92px', width: '10px' },  // T
-              { left: '114.5px', width: '9px' }, // F
-              { left: '136px', width: '10px' }  // S
+              { left: '2px', width: '8px' },   // S
+              { left: '18px', width: '12px' },  // M
+              { left: '38px', width: '8px' },  // T
+              { left: '54px', width: '14px' },  // W
+              { left: '76px', width: '8px' },  // T
+              { left: '92px', width: '8px' }, // F
+              { left: '108px', width: '8px' }  // S
             ];
             
             return (
@@ -290,8 +290,8 @@ const DateVillaSelection = () => {
                   fontFamily: 'Rethink Sans, sans-serif',
                   fontStyle: 'normal',
                   fontWeight: 700,
-                  fontSize: '16px',
-                  lineHeight: '21px',
+                  fontSize: '14px',
+                  lineHeight: '18px',
                   textAlign: 'center',
                   letterSpacing: '0.01em',
                   color: '#3F3E3E'
@@ -311,14 +311,14 @@ const DateVillaSelection = () => {
             const col = index % 7;
             
             // Calculate exact positioning based on the CSS specifications
-            const leftPositions = [0, 22, 46, 66, 92, 114.5, 136];
-            const topPositions = [25, 44, 63, 82, 101, 120];
+            const leftPositions = [0, 18, 38, 54, 76, 92, 108];
+            const topPositions = [20, 35, 50, 65, 80, 95];
             
             const left = leftPositions[col];
-            const top = topPositions[row] || 120;
+            const top = topPositions[row] || 95;
             
             // Calculate width based on number of digits
-            const width = day.toString().length === 1 ? '7px' : '14px';
+            const width = day.toString().length === 1 ? '6px' : '12px';
             
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isSelected = dateStr === selectedDates.arrival || dateStr === selectedDates.departure;
@@ -414,11 +414,11 @@ const DateVillaSelection = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Calendar Section */}
           <div className="lg:col-span-2">
-            <div className="bg-white border border-gray-200 p-6">
+            <div className="bg-white border border-gray-200 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <button 
                   onClick={() => navigateMonth('prev')}
@@ -435,7 +435,7 @@ const DateVillaSelection = () => {
                 </button>
               </div>
               
-              <div className="flex space-x-4 overflow-x-auto justify-center">
+              <div className="flex space-x-2 sm:space-x-4 overflow-x-auto justify-center">
                 {[0, 1, 2].map(offset => renderCalendar(offset))}
               </div>
             </div>
@@ -553,7 +553,7 @@ const DateVillaSelection = () => {
 
           {/* Availability Results */}
           {availabilityResults && (
-            <div className="bg-white border border-gray-200 p-6">
+            <div className="bg-white border border-gray-200 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Availability Results</h3>
               
               {/* Simple Villa Availability */}
@@ -564,10 +564,10 @@ const DateVillaSelection = () => {
                       ? 'border-green-200 bg-green-50' 
                       : 'border-red-200 bg-red-50'
                   }`}>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                         <h4 className="text-lg font-semibold text-gray-800">{villa.name}</h4>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium self-start ${
                           villa.available 
                             ? 'bg-green-100 text-green-700' 
                             : 'bg-red-100 text-red-700'
@@ -579,7 +579,7 @@ const DateVillaSelection = () => {
                       {villa.available && (
                         <button
                           onClick={() => setSelectedVillaId(villa.id)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto ${
                             selectedVillaId === villa.id
                               ? 'bg-blue-600 text-white'
                               : 'bg-gray-800 text-white hover:bg-gray-700'
@@ -614,30 +614,30 @@ const DateVillaSelection = () => {
                   <ImageDebugger
                     imagePath={selectedVilla.images?.[0] || '/images/glass-cottage/main.jpg'}
                     alt={selectedVilla.name}
-                    className="w-full h-80 lg:h-96 object-cover"
+                    className="w-full h-64 sm:h-80 lg:h-96 object-cover"
                   />
                 </div>
 
                 {/* Villa Details */}
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-2xl font-light text-gray-800 mb-2">{selectedVilla.name}</h3>
+                <div className="p-4 sm:p-6 lg:p-8">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-4 sm:space-y-0">
+                    <div className="flex-1">
+                      <h3 className="text-xl sm:text-2xl font-light text-gray-800 mb-2">{selectedVilla.name}</h3>
                       <p className="text-gray-600 text-sm leading-relaxed mb-4">{selectedVilla.description}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm text-gray-600 mb-4">
                         <div className="flex items-center">
-                          <Users className="w-4 h-4 mr-1" />
+                          <Users className="w-4 h-4 mr-1 flex-shrink-0" />
                           <span>Max {selectedVilla.max_guests} guests</span>
                         </div>
                         <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-1" />
+                          <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
                           <span>Forest location</span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <div className="text-sm text-gray-600">From</div>
-                      <div className="text-2xl font-light">₹{selectedVilla.base_price.toLocaleString()}</div>
+                      <div className="text-xl sm:text-2xl font-light">₹{selectedVilla.base_price.toLocaleString()}</div>
                       <div className="text-sm text-gray-600">/ night</div>
                     </div>
                   </div>
@@ -646,19 +646,59 @@ const DateVillaSelection = () => {
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-800 mb-3">Amenities</h4>
                     {selectedVilla.id === 'kingfisher-villa' ? (
-                      <div className="w-full">
+                      <div className="relative w-full overflow-hidden">
                         <img 
                           src="/images/kingfisher/amenities-icons.png" 
                           alt="Kingfisher villa amenities" 
-                          className="w-full h-auto object-contain"
+                          className="w-full max-w-sm mx-auto h-auto object-contain"
+                          style={{ minHeight: '120px' }}
+                          onError={(e) => {
+                            console.error('Failed to load amenities image:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('Amenities image loaded successfully');
+                          }}
+                        />
+                      </div>
+                    ) : selectedVilla.id === 'glass-cottage' ? (
+                      <div className="relative w-full overflow-hidden">
+                        <img 
+                          src="/images/glass-cottage/main.jpg" 
+                          alt="Glass Cottage amenities" 
+                          className="w-full max-w-sm mx-auto h-auto object-cover rounded-lg"
+                          style={{ minHeight: '120px' }}
+                          onError={(e) => {
+                            console.error('Failed to load amenities image:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('Glass Cottage amenities image loaded successfully');
+                          }}
+                        />
+                      </div>
+                    ) : selectedVilla.id === 'hornbill-villa' ? (
+                      <div className="relative w-full overflow-hidden">
+                        <img 
+                          src="/images/hornbill/amenities-icons.png" 
+                          alt="Hornbill villa amenities" 
+                          className="w-full max-w-sm mx-auto h-auto object-contain"
+                          style={{ minHeight: '120px' }}
+                          onError={(e) => {
+                            console.error('Failed to load amenities image:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log('Hornbill villa amenities image loaded successfully');
+                          }}
                         />
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedVilla.amenities?.slice(0, 8).map((amenity, index) => (
                           <div key={index} className="flex items-center text-sm text-gray-600">
-                            <Star className="w-3 h-3 mr-2 text-secondary-600" />
-                            <span>{amenity}</span>
+                            <Star className="w-3 h-3 mr-2 text-secondary-600 flex-shrink-0" />
+                            <span className="truncate">{amenity}</span>
                           </div>
                         ))}
                       </div>

@@ -181,6 +181,48 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['email_logs']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['email_logs']['Insert']>;
       };
+      safari_queries: {
+        Row: {
+          id: string;
+          booking_id: string | null;
+          guest_name: string;
+          email: string;
+          phone: string | null;
+          safari_option_id: string | null;
+          safari_name: string;
+          preferred_date: string | null;
+          preferred_timing: string | null;
+          number_of_persons: number;
+          special_requirements: string | null;
+          status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+          admin_notes: string | null;
+          response: string | null;
+          responded_at: string | null;
+          responded_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['safari_queries']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['safari_queries']['Insert']>;
+      };
+      safari_options: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          duration: string | null;
+          price_per_person: number;
+          max_persons: number;
+          images: string[];
+          timings: any[];
+          highlights: string[];
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['safari_options']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['safari_options']['Insert']>;
+      };
     };
   };
 }

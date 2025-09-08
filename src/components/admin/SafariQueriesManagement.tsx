@@ -634,3 +634,4 @@ const SafariQueriesManagement = () => {
 };
 
 export default SafariQueriesManagement;
+

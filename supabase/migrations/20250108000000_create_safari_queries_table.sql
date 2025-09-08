@@ -1,3 +1,32 @@
+/*
+  # Create Safari Queries Table
+
+  1. New Table
+    - `safari_queries`
+      - `id` (uuid, primary key)
+      - `booking_id` (text, optional reference to booking)
+      - `guest_name` (text, required)
+      - `email` (text, required)
+      - `phone` (text, optional)
+      - `safari_option_id` (text, foreign key to safari_options)
+      - `safari_name` (text, required)
+      - `preferred_date` (date, optional)
+      - `preferred_timing` (text, optional)
+      - `number_of_persons` (integer, required)
+      - `special_requirements` (text, optional)
+      - `status` (text, default: 'pending')
+      - `admin_notes` (text, optional)
+      - `response` (text, optional)
+      - `responded_at` (timestamptz, optional)
+      - `responded_by` (text, optional)
+      - `created_at` (timestamptz)
+      - `updated_at` (timestamptz)
+
+  2. Security
+    - Enable RLS on table
+    - Add policies for public query creation and admin management
+*/
+
 -- Create safari_queries table
 CREATE TABLE IF NOT EXISTS safari_queries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

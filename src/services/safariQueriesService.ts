@@ -45,7 +45,7 @@ export class SafariQueriesService {
   static async getSafariQueries(filters: SafariQueryFilters = {}): Promise<SafariQuery[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        return this.getDemoSafariQueries();
+        throw new Error('Supabase not configured. Please connect to Supabase first.');
       }
 
       let query = supabase
@@ -83,7 +83,7 @@ export class SafariQueriesService {
     } catch (error) {
       console.error('Error fetching safari queries:', error);
       ErrorHandler.logError(error, 'get_safari_queries');
-      return this.getDemoSafariQueries();
+      throw error;
     }
   }
 
@@ -91,8 +91,7 @@ export class SafariQueriesService {
   static async getSafariQueryById(id: string): Promise<SafariQuery | null> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        const demoQueries = this.getDemoSafariQueries();
-        return demoQueries.find(query => query.id === id) || null;
+        throw new Error('Supabase not configured. Please connect to Supabase first.');
       }
 
       const { data, error } = await supabase
@@ -250,7 +249,7 @@ export class SafariQueriesService {
   static async getSafariQueryStats(): Promise<SafariQueryStats> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        return this.getDemoSafariQueryStats();
+        throw new Error('Supabase not configured. Please connect to Supabase first.');
       }
 
       // Get total counts
@@ -301,77 +300,10 @@ export class SafariQueriesService {
       };
     } catch (error) {
       console.error('Error fetching safari query stats:', error);
-      return this.getDemoSafariQueryStats();
+      throw error;
     }
   }
 
-  // Demo data for when Supabase is not configured
-  private static getDemoSafariQueries(): SafariQuery[] {
-    return [
-      {
-        id: 'demo-1',
-        booking_id: 'BK001',
-        guest_name: 'John Smith',
-        email: 'john.smith@email.com',
-        phone: '+91-9876543210',
-        safari_option_id: 'morning-wildlife-safari',
-        safari_name: 'Morning Wildlife Safari',
-        preferred_date: '2024-01-15',
-        preferred_timing: 'early-morning',
-        number_of_persons: 2,
-        special_requirements: 'Vegetarian meals preferred',
-        status: 'pending',
-        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'demo-2',
-        booking_id: 'BK002',
-        guest_name: 'Sarah Johnson',
-        email: 'sarah.j@email.com',
-        phone: '+91-9876543211',
-        safari_option_id: 'evening-wildlife-safari',
-        safari_name: 'Evening Wildlife Safari',
-        preferred_date: '2024-01-16',
-        preferred_timing: 'evening',
-        number_of_persons: 4,
-        special_requirements: 'Wheelchair accessible vehicle needed',
-        status: 'confirmed',
-        response: 'Confirmed for 4 persons. Wheelchair accessible vehicle arranged.',
-        responded_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        responded_by: 'admin',
-        admin_notes: 'Special vehicle arranged',
-        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'demo-3',
-        booking_id: 'BK003',
-        guest_name: 'Mike Wilson',
-        email: 'mike.w@email.com',
-        phone: '+91-9876543212',
-        safari_option_id: 'morning-wildlife-safari',
-        safari_name: 'Morning Wildlife Safari',
-        preferred_date: '2024-01-17',
-        preferred_timing: 'morning',
-        number_of_persons: 1,
-        special_requirements: 'Photography equipment allowed?',
-        status: 'pending',
-        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-  }
-
-  private static getDemoSafariQueryStats(): SafariQueryStats {
-    return {
-      total: 3,
-      pending: 2,
-      confirmed: 1,
-      cancelled: 0,
-      completed: 0,
-      this_month: 3,
-      this_week: 2
-    };
-  }
 }
+
+
