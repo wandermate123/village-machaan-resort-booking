@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Calendar, Users, Mail, Phone, MapPin, DollarSign } from 'lucide-react';
+import { X, Save, Calendar, Users, Mail, Phone, MapPin, DollarSign, Home } from 'lucide-react';
 import { BookingService } from '../../services/bookingService';
 import { VillaService } from '../../services/villaService';
 import { PackageService } from '../../services/packageService';
+import { InventoryService, VillaUnit } from '../../services/inventoryService';
 import { useToast } from '../common/Toast';
 import FormField from '../common/FormField';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -19,6 +20,9 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
   const [loading, setLoading] = useState(false);
   const [villas, setVillas] = useState([]);
   const [packages, setPackages] = useState([]);
+  const [availableUnits, setAvailableUnits] = useState<VillaUnit[]>([]);
+  const [assignedUnit, setAssignedUnit] = useState<VillaUnit | null>(null);
+  const [loadingUnits, setLoadingUnits] = useState(false);
   const [formData, setFormData] = useState({
     guest_name: '',
     email: '',
@@ -37,7 +41,8 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
     payment_status: 'pending',
     advance_amount: 0,
     remaining_amount: 0,
-    admin_notes: ''
+    admin_notes: '',
+    assigned_unit_id: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -61,11 +66,44 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
         payment_status: booking.payment_status || 'pending',
         advance_amount: booking.advance_amount || 0,
         remaining_amount: booking.remaining_amount || 0,
-        admin_notes: booking.admin_notes || ''
+        admin_notes: booking.admin_notes || '',
+        assigned_unit_id: ''
       });
+      
+      // Load assigned unit and available units
+      loadRoomData();
     }
     fetchVillasAndPackages();
   }, [booking]);
+
+  const loadRoomData = async () => {
+    if (!booking) return;
+    
+    try {
+      // Get currently assigned unit
+      const assigned = await InventoryService.getAssignedUnit(booking.booking_id);
+      setAssignedUnit(assigned);
+      
+      if (assigned) {
+        setFormData(prev => ({ ...prev, assigned_unit_id: assigned.id }));
+      }
+      
+      // Load available units for the current villa and dates
+      if (booking.villa_id && booking.check_in && booking.check_out) {
+        setLoadingUnits(true);
+        const units = await InventoryService.getAvailableUnitsForVilla(
+          booking.villa_id, 
+          booking.check_in, 
+          booking.check_out
+        );
+        setAvailableUnits(units);
+      }
+    } catch (error) {
+      console.error('Failed to load room data:', error);
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
 
   const fetchVillasAndPackages = async () => {
     try {
@@ -81,7 +119,7 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = async (field: string, value: any) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       
@@ -92,6 +130,8 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
           newData.villa_name = selectedVilla.name;
           newData.villa_price = selectedVilla.base_price;
         }
+        // Clear assigned unit when villa changes
+        newData.assigned_unit_id = '';
       }
       
       // Update related fields when package changes
@@ -124,6 +164,26 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+
+    // Reload available units when villa or dates change
+    if (field === 'villa_id' || field === 'check_in' || field === 'check_out') {
+      const currentData = { ...formData, [field]: value };
+      if (currentData.villa_id && currentData.check_in && currentData.check_out) {
+        setLoadingUnits(true);
+        try {
+          const units = await InventoryService.getAvailableUnitsForVilla(
+            currentData.villa_id,
+            currentData.check_in,
+            currentData.check_out
+          );
+          setAvailableUnits(units);
+        } catch (error) {
+          console.error('Failed to load available units:', error);
+        } finally {
+          setLoadingUnits(false);
+        }
+      }
     }
   };
 
@@ -213,7 +273,32 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
 
       if (result.success) {
         console.log('✅ Booking update successful');
-        showSuccess('Booking Updated', 'Booking updated successfully');
+        
+        // Handle room assignment if a specific unit is selected
+        if (formData.assigned_unit_id && formData.villa_id && formData.check_in && formData.check_out) {
+          try {
+            const roomResult = await InventoryService.assignUnitToBooking(
+              booking.booking_id,
+              formData.assigned_unit_id,
+              formData.check_in,
+              formData.check_out
+            );
+            
+            if (roomResult.success) {
+              console.log('✅ Room assigned successfully');
+              showSuccess('Booking Updated', 'Booking and room assignment updated successfully');
+            } else {
+              console.warn('⚠️ Room assignment failed:', roomResult.error);
+              showSuccess('Booking Updated', 'Booking updated but room assignment failed');
+            }
+          } catch (error) {
+            console.error('❌ Room assignment error:', error);
+            showSuccess('Booking Updated', 'Booking updated but room assignment failed');
+          }
+        } else {
+          showSuccess('Booking Updated', 'Booking updated successfully');
+        }
+        
         // Close modal and refresh data
         onSave();
       } else {
@@ -381,6 +466,46 @@ const BookingEditModal: React.FC<BookingEditModalProps> = ({ booking, onClose, o
                   <option value="refunded">Refunded</option>
                   <option value="partial_refund">Partial Refund</option>
                 </select>
+              </FormField>
+
+              <FormField label="Assigned Room" error={errors.assigned_unit_id}>
+                <div className="space-y-2">
+                  {assignedUnit && (
+                    <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Home className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-800">
+                          Currently assigned: {assignedUnit.unit_number}
+                        </span>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">
+                        {assignedUnit.room_type} • Floor {assignedUnit.floor} • {assignedUnit.view_type}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <select
+                    value={formData.assigned_unit_id}
+                    onChange={(e) => handleInputChange('assigned_unit_id', e.target.value)}
+                    disabled={loadingUnits}
+                    className="w-full p-3 border border-primary-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-colors disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {loadingUnits ? 'Loading rooms...' : 'Select a room (optional)'}
+                    </option>
+                    {availableUnits.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.unit_number} - {unit.room_type} • Floor {unit.floor} • {unit.view_type}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {availableUnits.length === 0 && !loadingUnits && formData.villa_id && formData.check_in && formData.check_out && (
+                    <p className="text-sm text-orange-600">
+                      No rooms available for the selected dates. The booking will be handled automatically.
+                    </p>
+                  )}
+                </div>
               </FormField>
 
               <FormField label="Advance Amount" error={errors.advance_amount}>

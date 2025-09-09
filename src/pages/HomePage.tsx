@@ -29,7 +29,7 @@ const HomePage = () => {
 
 
   return (
-    <div className="bg-cream">
+    <div className="bg-cream" style={{ backgroundColor: '#F3EEE7' }}>
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center bg-gradient-to-b from-primary-900/20 to-primary-900/40" 
                style={{

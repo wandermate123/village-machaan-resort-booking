@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, Home, MapPin, Phone, Mail, Clock, ChevronLeft, ChevronRight, Filter, Download, Eye, X } from 'lucide-react';
-import { SimpleOccupancyService, SimpleOccupancyData } from '../../services/simpleOccupancyService';
-import { VillaService } from '../../services/villaService';
+import { OccupancyService, VillaOccupancyData } from '../../services/occupancyService';
 import { useToast } from '../common/Toast';
 import LoadingSpinner from '../common/LoadingSpinner';
 
@@ -30,94 +29,44 @@ interface OccupancyData {
 
 const OccupancyOverview = () => {
   const { showError } = useToast();
-  const [occupancyData, setOccupancyData] = useState<OccupancyData[]>([]);
-  const [villas, setVillas] = useState([]);
+  const [occupancyData, setOccupancyData] = useState<VillaOccupancyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
-  const [selectedGuest, setSelectedGuest] = useState(null);
-  const [showGuestDetails, setShowGuestDetails] = useState(false);
   const [villaFilter, setVillaFilter] = useState('all');
 
   useEffect(() => {
     fetchOccupancyData();
   }, [selectedDate, viewMode, villaFilter]);
 
-  useEffect(() => {
-    fetchVillas();
-  }, []);
-
-  const fetchVillas = async () => {
-    try {
-      const villasData = await VillaService.getAllVillas();
-      setVillas(villasData);
-    } catch (error) {
-      showError('Loading Error', 'Failed to load villa data');
-    }
-  };
-
   const fetchOccupancyData = async () => {
     setLoading(true);
     try {
-      const dates = generateDateRange();
-      const occupancyPromises = dates.map(async (date) => {
-        const dateStr = date.toISOString().split('T')[0];
-        
-        // Group by villa
-        const villaOccupancy: OccupancyData['villas'] = {};
-        
-        // Initialize all villas with real data from InventoryService
-        for (const villa of villas) {
-          if (villaFilter === 'all' || villaFilter === villa.id) {
-            try {
-              // Get real availability data
-              const units = await InventoryService.getAvailableUnits(villa.id, dateStr, dateStr);
-              
-              // Get occupancy data for this date
-              const occupancyForDate = await InventoryService.getOccupancyForDates(dateStr, dateStr);
-              const villaOccupancyData = occupancyForDate.filter(occ => occ.villa_id === villa.id);
-              
-              villaOccupancy[villa.id] = {
-                villaName: villa.name,
-                totalUnits: units.totalUnits,
-                occupiedUnits: villaOccupancyData.length,
-                availableUnits: units.availableUnits,
-                guests: villaOccupancyData.map(occ => ({
-                  bookingId: occ.booking_id,
-                  guestName: occ.guest_name,
-                  email: occ.email,
-                  phone: occ.phone,
-                  guests: occ.guests,
-                  checkIn: occ.check_in,
-                  checkOut: occ.check_out,
-                  status: occ.status,
-                  unitNumber: occ.unit_number
-                }))
-              };
-            } catch (error) {
-              console.error(`Error fetching data for villa ${villa.id} on ${dateStr}:`, error);
-              // Fallback to basic data
-              const totalUnits = getVillaTotalUnits(villa.id);
-              villaOccupancy[villa.id] = {
-                villaName: villa.name,
-                totalUnits,
-                occupiedUnits: 0,
-                availableUnits: totalUnits,
-                guests: []
-              };
-            }
-          }
-        }
+      let data: VillaOccupancyData[] = [];
+      
+      switch (viewMode) {
+        case 'daily':
+          data = await OccupancyService.getOccupancyForDate(selectedDate.toISOString().split('T')[0]);
+          break;
+        case 'weekly':
+          const weeklyData = await OccupancyService.getWeeklyOccupancy(selectedDate.toISOString().split('T')[0]);
+          // Flatten weekly data for display
+          data = weeklyData.flat();
+          break;
+        case 'monthly':
+          const monthlyData = await OccupancyService.getMonthlyOccupancy(selectedDate.getFullYear(), selectedDate.getMonth() + 1);
+          // Flatten monthly data for display
+          data = monthlyData.flat();
+          break;
+      }
 
-        return {
-          date: dateStr,
-          villas: villaOccupancy
-        };
-      });
+      // Filter by villa if needed
+      if (villaFilter !== 'all') {
+        data = data.filter(item => item.villa_id === villaFilter);
+      }
 
-      const occupancyResults = await Promise.all(occupancyPromises);
-      setOccupancyData(occupancyResults);
-      console.log('📊 Occupancy data loaded successfully:', occupancyResults);
+      setOccupancyData(data);
+      console.log('📊 Occupancy data loaded successfully:', data);
     } catch (error) {
       console.error('Error fetching occupancy data:', error);
       showError('Loading Error', 'Failed to load occupancy data');
@@ -126,63 +75,11 @@ const OccupancyOverview = () => {
     }
   };
 
-  const generateDateRange = () => {
-    const dates = [];
-    const start = new Date(selectedDate);
-    
-    switch (viewMode) {
-      case 'daily':
-        dates.push(new Date(start));
-        break;
-      case 'weekly':
-        // Get start of week (Sunday)
-        const startOfWeek = new Date(start);
-        startOfWeek.setDate(start.getDate() - start.getDay());
-        for (let i = 0; i < 7; i++) {
-          const date = new Date(startOfWeek);
-          date.setDate(startOfWeek.getDate() + i);
-          dates.push(date);
-        }
-        break;
-      case 'monthly':
-        // Get all days in the month
-        const year = start.getFullYear();
-        const month = start.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        for (let i = 1; i <= daysInMonth; i++) {
-          dates.push(new Date(year, month, i));
-        }
-        break;
-    }
-    
-    return dates;
-  };
-
-  const getVillaTotalUnits = (villaId: string) => {
-    switch (villaId) {
-      case 'glass-cottage': return 14;
-      case 'hornbill-villa': return 4;
-      case 'kingfisher-villa': return 4;
-      default: return 1;
-    }
-  };
-
-  const generateUnitNumber = (villaId: string, bookingId: string) => {
-    // Generate consistent unit numbers based on booking ID
-    const hash = bookingId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    
-    const totalUnits = getVillaTotalUnits(villaId);
-    const unitNum = Math.abs(hash % totalUnits) + 1;
-    
-    switch (villaId) {
-      case 'glass-cottage': return `GC-${unitNum.toString().padStart(2, '0')}`;
-      case 'hornbill-villa': return `HV-${unitNum.toString().padStart(2, '0')}`;
-      case 'kingfisher-villa': return `KV-${unitNum.toString().padStart(2, '0')}`;
-      default: return `U-${unitNum}`;
-    }
+  // Villa configuration
+  const VILLA_CONFIG = {
+    'hornbill-villa': { name: 'Hornbill Villa', total: 4 },
+    'kingfisher-villa': { name: 'Kingfisher Villa', total: 4 },
+    'glass-cottage': { name: 'Glass Cottage', total: 14 }
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -203,10 +100,6 @@ const OccupancyOverview = () => {
     setSelectedDate(newDate);
   };
 
-  const handleViewGuest = (guest: any) => {
-    setSelectedGuest(guest);
-    setShowGuestDetails(true);
-  };
 
   const exportOccupancyReport = () => {
     const csvData = generateOccupancyCSV();
@@ -256,20 +149,16 @@ const OccupancyOverview = () => {
   };
 
   const getTotalOccupancy = () => {
-    let totalUnits = 0;
-    let occupiedUnits = 0;
-    
-    occupancyData.forEach(dayData => {
-      Object.values(dayData.villas).forEach(villa => {
-        totalUnits += villa.totalUnits;
-        occupiedUnits += villa.occupiedUnits;
-      });
-    });
+    const totalUnits = occupancyData.reduce((sum, villa) => sum + villa.total_units, 0);
+    const occupiedUnits = occupancyData.reduce((sum, villa) => sum + villa.occupied_units, 0);
+    const availableUnits = totalUnits - occupiedUnits;
+    const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
     
     return {
       totalUnits,
       occupiedUnits,
-      occupancyRate: totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0
+      availableUnits,
+      occupancyRate
     };
   };
 
@@ -316,8 +205,8 @@ const OccupancyOverview = () => {
             className="px-4 py-2 border border-primary-300 rounded-lg focus:ring-2 focus:ring-secondary-500 transition-colors"
           >
             <option value="all">All Villas</option>
-            {villas.map((villa: any) => (
-              <option key={villa.id} value={villa.id}>{villa.name}</option>
+            {Object.entries(VILLA_CONFIG).map(([villaId, config]) => (
+              <option key={villaId} value={villaId}>{config.name}</option>
             ))}
           </select>
           <button 
@@ -386,12 +275,12 @@ const OccupancyOverview = () => {
           </div>
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <MapPin className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-600">{totalStats.totalUnits - totalStats.occupiedUnits}</p>
+            <p className="text-2xl font-bold text-gray-600">{totalStats.availableUnits}</p>
             <p className="text-gray-700 text-sm">Available</p>
           </div>
           <div className="bg-purple-50 rounded-lg p-4 text-center">
             <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-purple-600">{totalStats.occupancyRate.toFixed(1)}%</p>
+            <p className="text-2xl font-bold text-purple-600">{totalStats.occupancyRate}%</p>
             <p className="text-purple-700 text-sm">Occupancy Rate</p>
           </div>
         </div>
@@ -405,168 +294,81 @@ const OccupancyOverview = () => {
       ) : (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-primary-100">
           <div className="overflow-x-auto">
-            {viewMode === 'daily' ? (
-              // Daily View - Detailed guest list
-              <div className="p-6">
-                {occupancyData.length > 0 && (
-                  <div className="space-y-6">
-                    {Object.entries(occupancyData[0].villas).map(([villaId, villaData]) => (
-                      <div key={villaId} className="border border-primary-200 rounded-lg overflow-hidden">
-                        <div className="bg-primary-50 px-6 py-4 border-b border-primary-200">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-primary-950">{villaData.villaName}</h3>
-                            <div className="flex items-center space-x-4">
-                              <span className="text-sm text-primary-700">
-                                {villaData.occupiedUnits}/{villaData.totalUnits} units occupied
-                              </span>
-                              <div className="w-20 h-2 bg-gray-200 rounded-full">
-                                <div 
-                                  className={`h-full rounded-full ${getOccupancyColor((villaData.occupiedUnits / villaData.totalUnits) * 100)}`}
-                                  style={{ width: `${(villaData.occupiedUnits / villaData.totalUnits) * 100}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="p-6">
-                          {villaData.guests.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {villaData.guests.map((guest, idx) => (
-                                <div key={idx} className="border border-primary-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded text-xs font-medium">
-                                      Unit {guest.unitNumber}
-                                    </span>
-                                    <button
-                                      onClick={() => handleViewGuest(guest)}
-                                      className="text-primary-600 hover:text-secondary-600 transition-colors"
-                                    >
-                                      <Eye className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                  <h4 className="font-semibold text-primary-950 mb-2">{guest.guestName}</h4>
-                                  <div className="space-y-1 text-sm text-primary-700">
-                                    <div className="flex items-center">
-                                      <Users className="w-3 h-3 mr-2" />
-                                      <span>{guest.guests} guests</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                      <Calendar className="w-3 h-3 mr-2" />
-                                      <span>{new Date(guest.checkIn).toLocaleDateString()} - {new Date(guest.checkOut).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                      <Phone className="w-3 h-3 mr-2" />
-                                      <span>{guest.phone}</span>
-                                    </div>
-                                  </div>
-                                  <div className="mt-3">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      guest.status === 'confirmed' ? 'bg-success-100 text-success-700' :
-                                      guest.status === 'pending' ? 'bg-warning-100 text-warning-700' :
-                                      'bg-blue-100 text-blue-700'
-                                    }`}>
-                                      {guest.status}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-8 text-primary-600">
-                              <Home className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                              <p>All units available</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {occupancyData.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No occupancy data available for the selected period</p>
               </div>
             ) : (
-              // Weekly/Monthly View - Grid format
               <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-primary-200">
-                        <th className="text-left p-3 font-semibold text-primary-950">Villa</th>
-                        {occupancyData.map((dayData) => (
-                          <th key={dayData.date} className="text-center p-3 font-semibold text-primary-950 min-w-32">
-                            {formatDateHeader(dayData.date)}
-                            <div className="text-xs text-primary-600 font-normal">
-                              {new Date(dayData.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {villas.map((villa: any) => {
-                        if (villaFilter !== 'all' && villaFilter !== villa.id) return null;
-                        
-                        return (
-                          <tr key={villa.id} className="border-b border-primary-100">
-                            <td className="p-3">
-                              <div>
-                                <p className="font-semibold text-primary-950">{villa.name}</p>
-                                <p className="text-primary-600 text-sm">{getVillaTotalUnits(villa.id)} units</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {occupancyData.map((villa) => (
+                    <div key={villa.villa_id} className="border border-primary-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-xl font-semibold text-primary-950">{villa.villa_name}</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getOccupancyColor(villa.occupancy_rate)} text-white`}>
+                          {villa.occupancy_rate}%
+                              </span>
                               </div>
-                            </td>
-                            {occupancyData.map((dayData) => {
-                              const villaData = dayData.villas[villa.id];
-                              if (!villaData) {
-                                return (
-                                  <td key={dayData.date} className="p-3 text-center">
-                                    <div className="bg-gray-100 rounded p-2">
-                                      <p className="text-sm text-gray-600">No data</p>
-                                    </div>
-                                  </td>
-                                );
-                              }
-                              
-                              const occupancyRate = (villaData.occupiedUnits / villaData.totalUnits) * 100;
-                              
-                              return (
-                                <td key={dayData.date} className="p-3 text-center">
-                                  <div className="space-y-2">
-                                    <div className={`rounded-lg p-3 ${
-                                      villaData.occupiedUnits === 0 ? 'bg-gray-100' :
-                                      occupancyRate >= 90 ? 'bg-red-100' :
-                                      occupancyRate >= 70 ? 'bg-yellow-100' :
-                                      'bg-green-100'
-                                    }`}>
-                                      <p className="font-bold text-primary-950">
-                                        {villaData.occupiedUnits}/{villaData.totalUnits}
-                                      </p>
+
+                      <div className="space-y-3 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-primary-600">Total Units:</span>
+                          <span className="font-medium text-lg">{villa.total_units}</span>
+                            </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-orange-600">Occupied:</span>
+                          <span className="font-medium text-orange-600 text-lg">{villa.occupied_units}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-green-600">Available:</span>
+                          <span className="font-medium text-green-600 text-lg">{villa.available_units}</span>
+                        </div>
+                      </div>
+
+                      {/* Occupancy Bar */}
+                      <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                        <div 
+                          className={`h-3 rounded-full transition-all duration-300 ${getOccupancyColor(villa.occupancy_rate)}`}
+                          style={{ width: `${villa.occupancy_rate}%` }}
+                        />
+                            </div>
+
+                      {/* Bookings */}
+                      {villa.bookings.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-primary-700">Current Bookings:</p>
+                          {villa.bookings.map((booking) => (
+                            <div 
+                              key={booking.booking_id}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition-colors"
+                              onClick={() => console.log('Guest clicked:', booking)}
+                            >
+                              <div>
+                                <p className="font-medium text-primary-950">{booking.guest_name}</p>
+                                <p className="text-primary-600">{booking.guests} guests</p>
+                                {booking.unit_number && (
+                                  <p className="text-xs text-primary-500">Unit: {booking.unit_number}</p>
+                                )}
+                              </div>
+                              <div className="text-right">
                                       <p className="text-xs text-primary-600">
-                                        {villaData.guests.reduce((sum, guest) => sum + guest.guests, 0)} guests
-                                      </p>
+                                  {new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}
+                                </p>
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                  booking.status === 'checked_in' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {booking.status}
+                                </span>
                                     </div>
-                                    
-                                    {villaData.guests.length > 0 && (
-                                      <div className="space-y-1">
-                                        {villaData.guests.slice(0, 2).map((guest, idx) => (
-                                          <div key={idx} className="text-xs bg-white border border-primary-200 rounded p-1">
-                                            <p className="font-medium text-primary-950 truncate">{guest.guestName}</p>
-                                            <p className="text-primary-600">{guest.unitNumber}</p>
                                           </div>
                                         ))}
-                                        {villaData.guests.length > 2 && (
-                                          <p className="text-xs text-primary-600">+{villaData.guests.length - 2} more</p>
-                                        )}
                                       </div>
                                     )}
                                   </div>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  ))}
                 </div>
               </div>
             )}
@@ -574,81 +376,6 @@ const OccupancyOverview = () => {
         </div>
       )}
 
-      {/* Guest Details Modal */}
-      {showGuestDetails && selectedGuest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b border-primary-200">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-primary-950">Guest Details</h3>
-                <button
-                  onClick={() => setShowGuestDetails(false)}
-                  className="text-primary-600 hover:text-primary-800 transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-8 h-8 text-primary-600" />
-                </div>
-                <h4 className="text-lg font-semibold text-primary-950">{selectedGuest.guestName}</h4>
-                <p className="text-primary-600">Unit {selectedGuest.unitNumber}</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-4 h-4 text-primary-600" />
-                  <span className="text-primary-700">{selectedGuest.email}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-4 h-4 text-primary-600" />
-                  <span className="text-primary-700">{selectedGuest.phone}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Users className="w-4 h-4 text-primary-600" />
-                  <span className="text-primary-700">{selectedGuest.guests} guests</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Calendar className="w-4 h-4 text-primary-600" />
-                  <span className="text-primary-700">
-                    {new Date(selectedGuest.checkIn).toLocaleDateString()} - {new Date(selectedGuest.checkOut).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-primary-50 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-primary-700">Booking Status:</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    selectedGuest.status === 'confirmed' ? 'bg-success-100 text-success-700' :
-                    selectedGuest.status === 'pending' ? 'bg-warning-100 text-warning-700' :
-                    'bg-blue-100 text-blue-700'
-                  }`}>
-                    {selectedGuest.status}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-primary-700">Booking ID:</span>
-                  <span className="font-mono text-primary-950 text-sm">#{selectedGuest.bookingId}</span>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex space-x-3 pt-4">
-                <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm transition-colors">
-                  View Full Booking
-                </button>
-                <button className="flex-1 bg-primary-800 hover:bg-primary-900 text-white py-2 rounded-lg text-sm transition-colors">
-                  Contact Guest
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

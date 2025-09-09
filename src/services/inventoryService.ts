@@ -331,6 +331,61 @@ export class InventoryService {
         return [];
       }
 
+      // Try to get occupancy from booking_units table first
+      try {
+        const { data: bookingUnits, error } = await supabase
+          .from('booking_units')
+          .select(`
+            booking_id,
+            check_in,
+            check_out,
+            status,
+            villa_inventory_id,
+            villa_inventory!inner(
+              villa_id,
+              unit_number,
+              villas!inner(
+                name as villa_name
+              )
+            ),
+            bookings!inner(
+              guest_name,
+              email,
+              phone,
+              guests
+            )
+          `)
+          .or(`and(check_in.lte.${endDate},check_out.gt.${startDate})`)
+          .in('status', ['reserved', 'occupied']);
+
+        if (error) throw error;
+
+        return (bookingUnits || []).map(unit => ({
+          villa_id: unit.villa_inventory.villa_id,
+          villa_name: unit.villa_inventory.villas.name,
+          unit_number: unit.villa_inventory.unit_number,
+          guest_name: unit.bookings.guest_name,
+          email: unit.bookings.email,
+          phone: unit.bookings.phone,
+          check_in: unit.check_in,
+          check_out: unit.check_out,
+          guests: unit.bookings.guests,
+          booking_id: unit.booking_id,
+          status: unit.status
+        }));
+      } catch (inventoryError) {
+        console.warn('Inventory system not available, using fallback method:', inventoryError);
+        return this.getOccupancyForDatesFallback(startDate, endDate);
+      }
+    } catch (error) {
+      console.error('Error fetching occupancy for dates:', error);
+      return [];
+    }
+  }
+
+  // Fallback method for occupancy dates
+  private static async getOccupancyForDatesFallback(startDate: string, endDate: string): Promise<OccupancyData[]> {
+    try {
       const { data: bookings, error } = await supabase
         .from('bookings')
         .select(`
@@ -365,7 +420,7 @@ export class InventoryService {
         status: booking.status
       }));
     } catch (error) {
-      console.error('Error fetching occupancy for dates:', error);
+      console.error('Error in fallback occupancy calculation:', error);
       return [];
     }
   }
@@ -641,6 +696,150 @@ export class InventoryService {
       console.error('❌ Failed to delete villa unit:', error);
       const appError = ErrorHandler.handleSupabaseError(error);
       return { success: false, error: appError.message };
+    }
+  }
+
+  // Assign a specific unit to a booking
+  static async assignUnitToBooking(
+    bookingId: string, 
+    villaInventoryId: string, 
+    checkIn: string, 
+    checkOut: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        return { success: false, error: 'Supabase not configured. Please connect to Supabase first.' };
+      }
+
+      // Check if unit is available for the dates
+      const { data: existingBookings, error: checkError } = await supabase
+        .from('booking_units')
+        .select('id')
+        .eq('villa_inventory_id', villaInventoryId)
+        .in('status', ['reserved', 'occupied'])
+        .or(`and(check_in.lte.${checkIn},check_out.gt.${checkIn}),and(check_in.lt.${checkOut},check_out.gte.${checkOut}),and(check_in.gte.${checkIn},check_out.lte.${checkOut})`);
+
+      if (checkError) throw checkError;
+
+      if (existingBookings && existingBookings.length > 0) {
+        return { success: false, error: 'Unit is not available for the selected dates' };
+      }
+
+      // Remove any existing assignment for this booking
+      await supabase
+        .from('booking_units')
+        .delete()
+        .eq('booking_id', bookingId);
+
+      // Assign the unit to the booking
+      const { error } = await supabase
+        .from('booking_units')
+        .insert({
+          booking_id: bookingId,
+          villa_inventory_id: villaInventoryId,
+          check_in: checkIn,
+          check_out: checkOut,
+          status: 'reserved'
+        });
+
+      if (error) throw error;
+      
+      console.log('✅ Unit assigned to booking successfully:', bookingId, villaInventoryId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Failed to assign unit to booking:', error);
+      const appError = ErrorHandler.handleSupabaseError(error);
+      return { success: false, error: appError.message };
+    }
+  }
+
+  // Get available units for a villa on specific dates
+  static async getAvailableUnitsForVilla(villaId: string, checkIn: string, checkOut: string): Promise<VillaUnit[]> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        // Return demo units
+        const totalUnits = VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.total || 1;
+        return Array.from({ length: totalUnits }, (_, i) => ({
+          id: `${villaId}-unit-${i + 1}`,
+          villa_id: villaId,
+          unit_number: `${villaId.split('-')[0].toUpperCase()}-${(i + 1).toString().padStart(2, '0')}`,
+          room_type: VILLA_INVENTORY[villaId as keyof typeof VILLA_INVENTORY]?.type || 'room',
+          floor: Math.floor(i / 4) + 1,
+          view_type: i % 2 === 0 ? 'Forest View' : 'Garden View',
+          status: 'available',
+          amenities: ['Air Conditioning', 'WiFi'],
+          notes: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+      }
+
+      // Get all units for the villa
+      const { data: allUnits, error: unitsError } = await supabase
+        .from('villa_inventory')
+        .select('*')
+        .eq('villa_id', villaId)
+        .eq('status', 'available')
+        .order('unit_number');
+
+      if (unitsError) throw unitsError;
+
+      if (!allUnits || allUnits.length === 0) {
+        return [];
+      }
+
+      // Get units that are already booked for the date range
+      const { data: bookedUnits, error: bookedError } = await supabase
+        .from('booking_units')
+        .select('villa_inventory_id')
+        .in('villa_inventory_id', allUnits.map(unit => unit.id))
+        .in('status', ['reserved', 'occupied'])
+        .or(`and(check_in.lte.${checkIn},check_out.gt.${checkIn}),and(check_in.lt.${checkOut},check_out.gte.${checkOut}),and(check_in.gte.${checkIn},check_out.lte.${checkOut})`);
+
+      if (bookedError) throw bookedError;
+
+      const bookedUnitIds = new Set(bookedUnits?.map(unit => unit.villa_inventory_id) || []);
+      
+      // Filter out booked units
+      const availableUnits = allUnits.filter(unit => !bookedUnitIds.has(unit.id));
+      
+      console.log(`📊 Found ${availableUnits.length} available units for ${villaId} on ${checkIn} to ${checkOut}`);
+      return availableUnits;
+    } catch (error) {
+      console.error('Error getting available units for villa:', error);
+      return [];
+    }
+  }
+
+  // Get currently assigned unit for a booking
+  static async getAssignedUnit(bookingId: string): Promise<VillaUnit | null> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        return null;
+      }
+
+      const { data: bookingUnit, error } = await supabase
+        .from('booking_units')
+        .select(`
+          villa_inventory_id,
+          villa_inventory!inner(*)
+        `)
+        .eq('booking_id', bookingId)
+        .in('status', ['reserved', 'occupied'])
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No unit assigned
+          return null;
+        }
+        throw error;
+      }
+
+      return bookingUnit.villa_inventory as VillaUnit;
+    } catch (error) {
+      console.error('Error getting assigned unit:', error);
+      return null;
     }
   }
 }

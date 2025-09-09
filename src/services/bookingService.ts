@@ -252,7 +252,7 @@ export class BookingService {
       // First, try to find the booking by the identifier
       const { data: specificBooking, error: specificError } = await supabase!
         .from('bookings')
-        .select('id, booking_id, guest_name, email, phone, status, payment_status, villa_id, villa_name, villa_price')
+        .select('id, booking_id, guest_name, email, phone, status, payment_status, villa_id, villa_name, villa_price, check_in, check_out')
         .eq('id', identifier)
         .maybeSingle();
       
@@ -269,7 +269,7 @@ export class BookingService {
         console.log('🔄 Specific booking not found, using first available...');
         const { data: bookings, error: fetchError } = await supabase!
           .from('bookings')
-          .select('id, booking_id, guest_name, email, phone, status, payment_status, villa_id, villa_name, villa_price')
+          .select('id, booking_id, guest_name, email, phone, status, payment_status, villa_id, villa_name, villa_price, check_in, check_out')
           .limit(1);
         
         if (fetchError) {
@@ -367,6 +367,30 @@ export class BookingService {
         payment_status: updatedBooking[0].payment_status,
         updated_at: updatedBooking[0].updated_at
       });
+      
+      // Handle room assignment if villa_id or dates changed
+      if (updates.villa_id || updates.check_in || updates.check_out) {
+        const { InventoryService } = await import('./inventoryService');
+        const checkIn = updates.check_in || targetBooking.check_in;
+        const checkOut = updates.check_out || targetBooking.check_out;
+        const villaId = updates.villa_id || targetBooking.villa_id;
+        
+        // Try to assign an available unit
+        const availableUnits = await InventoryService.getAvailableUnitsForVilla(villaId, checkIn, checkOut);
+        if (availableUnits.length > 0) {
+          const result = await InventoryService.assignUnitToBooking(
+            targetBooking.booking_id,
+            availableUnits[0].id,
+            checkIn,
+            checkOut
+          );
+          if (result.success) {
+            console.log('✅ Room assigned to booking:', availableUnits[0].unit_number);
+          } else {
+            console.warn('⚠️ Failed to assign room:', result.error);
+          }
+        }
+      }
       
       // Verify the update by fetching the booking again
       const { data: verifyBooking, error: verifyError } = await supabase!

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useBooking } from '../../../contexts/BookingContext';
-import { ChevronLeft, ChevronRight, X, ArrowRight, Users, Star, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ArrowRight, Users, Star, MapPin, ChevronDown } from 'lucide-react';
 import ImageDebugger from '../../common/ImageDebugger';
 import { VillaService } from '../../../services/villaService';
 import { BookingService } from '../../../services/bookingService';
@@ -17,15 +17,15 @@ const DateVillaSelection = () => {
     arrival: state.checkIn || '', 
     departure: state.checkOut || '' 
   });
-  const [rooms, setRooms] = useState(1);
-  const [adults, setAdults] = useState(state.guests || 2);
-  const [children, setChildren] = useState(0);
+  const [rooms, setRooms] = useState<number | null>(1);
+  const [adults, setAdults] = useState<number | null>(state.guests || 2);
+  const [children, setChildren] = useState<number | null>(0);
   const [selectedVillaId, setSelectedVillaId] = useState(state.selectedVilla?.id || '');
   const [availableVillas, setAvailableVillas] = useState([]);
   const [allVillas, setAllVillas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const [availabilityResults, setAvailabilityResults] = useState(null);
+  const [availabilityStatus, setAvailabilityStatus] = useState(null); // 'available', 'not-available', or null
 
   // Load all villas on component mount
   useEffect(() => {
@@ -38,6 +38,8 @@ const DateVillaSelection = () => {
       const villa = allVillas.find(v => v.id === selectedVillaId);
       if (villa) {
         dispatch({ type: 'SET_VILLA', payload: villa });
+        // Reset availability status when villa selection changes
+        setAvailabilityStatus(null);
       }
     }
   }, [selectedVillaId, allVillas, dispatch]);
@@ -63,7 +65,7 @@ const DateVillaSelection = () => {
     }
 
     setCheckingAvailability(true);
-    setAvailabilityResults(null);
+    setAvailabilityStatus(null);
     try {
       const available = await BookingService.getAvailableVillas(
         selectedDates.arrival, 
@@ -72,32 +74,16 @@ const DateVillaSelection = () => {
       
       setAvailableVillas(available);
       
-      // Create detailed availability results
-      const results = {
-        checkIn: selectedDates.arrival,
-        checkOut: selectedDates.departure,
-        nights: Math.ceil((new Date(selectedDates.departure).getTime() - new Date(selectedDates.arrival).getTime()) / (1000 * 60 * 60 * 24)),
-        villas: await Promise.all(
-          allVillas.map(async (villa) => {
-            const availableUnits = await BookingService.getAvailableUnits(villa.id, selectedDates.arrival, selectedDates.departure);
-            return {
-              ...villa,
-              available: availableUnits > 0,
-              availableUnits,
-              roomType: villa.id === 'glass-cottage' ? 'Studio Cottage' : 'One Bedroom Villa'
-            };
-          })
-        )
-      };
-      
-      setAvailabilityResults(results);
-      
-      if (available.length === 0) {
-        showError('No Availability', 'No villas available for selected dates. Please try different dates.');
+      // Set availability status based on results
+      if (available.length > 0) {
+        setAvailabilityStatus('available');
+        showSuccess('Availability Checked', 'Villas are available for selected dates');
       } else {
-        showSuccess('Availability Checked', 'Villa availability checked successfully');
+        setAvailabilityStatus('not-available');
+        showError('No Availability', 'No villas available for selected dates. Please try different dates.');
       }
     } catch (error) {
+      setAvailabilityStatus('not-available');
       showError('Availability Check Failed', 'Failed to check villa availability. Please try again.');
     } finally {
       setCheckingAvailability(false);
@@ -215,7 +201,7 @@ const DateVillaSelection = () => {
         className="relative bg-white flex-shrink-0"
         style={{
           width: '200px',
-          height: '280px',
+          height: '250px',
           border: '0.5px solid #3F3E3E',
           boxSizing: 'border-box'
         }}
@@ -243,7 +229,7 @@ const DateVillaSelection = () => {
             width: '120px',
             height: '28px',
             left: 'calc(50% - 120px/2)',
-            top: '120px',
+            top: '110px',
             fontFamily: 'Rethink Sans, sans-serif',
             fontStyle: 'normal',
             fontWeight: 700,
@@ -261,22 +247,22 @@ const DateVillaSelection = () => {
         <div 
           className="absolute"
           style={{
-            width: '130px',
-            height: '120px',
-            left: 'calc(50% - 130px/2)',
-            top: '160px'
+            width: '180px',
+            height: '100px',
+            left: 'calc(50% - 180px/2)',
+            top: '140px'
           }}
         >
           {/* Days of Week Headers */}
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => {
             const positions = [
-              { left: '2px', width: '8px' },   // S
-              { left: '18px', width: '12px' },  // M
-              { left: '38px', width: '8px' },  // T
-              { left: '54px', width: '14px' },  // W
-              { left: '76px', width: '8px' },  // T
-              { left: '92px', width: '8px' }, // F
-              { left: '108px', width: '8px' }  // S
+              { left: '5px', width: '20px' },   // S
+              { left: '30px', width: '20px' },  // M
+              { left: '55px', width: '20px' },  // T
+              { left: '80px', width: '20px' },  // W
+              { left: '105px', width: '20px' },  // T
+              { left: '130px', width: '20px' }, // F
+              { left: '155px', width: '20px' }  // S
             ];
             
             return (
@@ -311,14 +297,14 @@ const DateVillaSelection = () => {
             const col = index % 7;
             
             // Calculate exact positioning based on the CSS specifications
-            const leftPositions = [0, 18, 38, 54, 76, 92, 108];
-            const topPositions = [20, 35, 50, 65, 80, 95];
+            const leftPositions = [5, 30, 55, 80, 105, 130, 155];
+            const topPositions = [20, 35, 50, 65, 80];
             
             const left = leftPositions[col];
-            const top = topPositions[row] || 95;
+            const top = topPositions[row] || 80;
             
             // Calculate width based on number of digits
-            const width = day.toString().length === 1 ? '6px' : '12px';
+            const width = '20px';
             
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isSelected = dateStr === selectedDates.arrival || dateStr === selectedDates.departure;
@@ -341,7 +327,7 @@ const DateVillaSelection = () => {
                   fontFamily: 'Quicksand, sans-serif',
                   fontStyle: 'normal',
                   fontWeight: 400,
-                  fontSize: '12px',
+                  fontSize: '10px',
                   lineHeight: '15px',
                   textAlign: 'center',
                   letterSpacing: '0.01em',
@@ -366,10 +352,17 @@ const DateVillaSelection = () => {
   const selectedVilla = allVillas.find(v => v.id === selectedVillaId);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen" style={{ backgroundColor: '#F3EEE7' }}>
+      {/* Header - Exact Vue.js Design */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '54px',
+          backgroundColor: '#f3eee7'
+        }}
+      >
+        <div className="flex items-center justify-between h-full px-6">
           <h1 className="text-2xl font-light text-gray-800">Village Machaan</h1>
           <div className="flex items-center space-x-4">
             <select className="text-sm border-none bg-transparent">
@@ -385,165 +378,270 @@ const DateVillaSelection = () => {
         </div>
       </div>
 
-      {/* Progress Steps */}
-      <div className="bg-white border-b border-gray-200 px-6 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-center text-xl text-gray-800 mb-8">Select your dates at Village Machaan</h2>
-          
-          <div className="flex items-center justify-center space-x-8">
-            {[
-              { step: 1, label: 'Date & Accommodation Selection', active: true },
-              { step: 2, label: 'Package Selection', active: false },
-              { step: 3, label: 'Safari Selection', active: false },
-              { step: 4, label: 'Confirmation', active: false }
-            ].map((item, index) => (
-              <div key={item.step} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm ${
-                    item.active ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-400'
-                  }`}>
-                    {item.step}
-                  </div>
-                  <span className="text-xs text-gray-600 mt-2 text-center max-w-24">{item.label}</span>
-                </div>
-                {index < 3 && <div className="w-16 h-px bg-gray-300 mx-4 mt-[-20px]"></div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Navigation Border Line */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '1px',
+          backgroundColor: '#000000'
+        }}
+      />
+
+       {/* Progress Steps - Exact Vue.js Design */}
+       <div className="px-6 py-8" style={{ backgroundColor: '#F3EEE7' }}>
+         <div className="max-w-4xl mx-auto">
+           {/* Title */}
+           <div 
+             className="mx-auto mb-2"
+             style={{
+               width: '333px',
+               height: '29px',
+               color: '#3f3e3e',
+               fontFamily: 'TAN - Angleton, sans-serif',
+               fontSize: '15px',
+               fontWeight: '400',
+               lineHeight: '28.845px',
+               textAlign: 'center'
+             }}
+           >
+             Select your dates at Village Machaan
+           </div>
+           
+           {/* Progress Circles and Connecting Line */}
+           <div className="flex items-center justify-center relative">
+             {/* Progress Circles */}
+             <div className="flex items-center justify-center space-x-48">
+               {[1, 2, 3, 4].map((step, index) => (
+                 <div key={step} className="relative">
+                   {/* Circle */}
+                   <div 
+                     className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                     style={{
+                       backgroundColor: step === 1 ? '#ffffff' : '#f3eee7',
+                       borderColor: step === 1 ? '#403b34' : '#d1d5db'
+                     }}
+                   >
+                     <span 
+                       className="text-xs font-normal"
+                       style={{ 
+                         fontFamily: 'TAN - AEGEAN, sans-serif',
+                         color: step === 1 ? '#403b34' : '#9ca3af'
+                       }}
+                     >
+                       {step}
+                     </span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+             
+             {/* Connecting Line */}
+             <div 
+               className="absolute top-3 w-96 h-0.5"
+               style={{
+                 background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTk4IiBoZWlnaHQ9IjIiIHZpZXdCb3g9IjAgMCA1OTggMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMSAxSDU5N1YxSDFaIiBmaWxsPSIjRkVGQkY3Ii8+PC9zdmc+) no-repeat center',
+                 backgroundSize: 'cover',
+                 transform: 'translateX(-50%)'
+               }}
+             />
+           </div>
+           
+           {/* Progress Labels */}
+           <div className="flex items-center justify-center space-x-48 mt-1">
+             {[
+               'Date & Accommodation Selection',
+               'Package Selection', 
+               'Safari Selection',
+               'Confirmation'
+             ].map((label, index) => (
+               <span 
+                 key={index}
+                 className="text-xs text-gray-600 text-center w-32"
+                 style={{ fontFamily: 'TAN - Angleton, sans-serif' }}
+               >
+                 {label}
+               </span>
+             ))}
+           </div>
+         </div>
+       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Calendar Section */}
           <div className="lg:col-span-2">
-            <div className="bg-white border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white border border-gray-200">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-black">
                 <button 
                   onClick={() => navigateMonth('prev')}
                   className="p-2 hover:bg-gray-100 rounded"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-5 h-5 text-gray-800" />
                 </button>
-                <h3 className="text-lg font-medium">Select Your Dates</h3>
+                <h3 className="text-lg font-serif text-gray-800">Select Your Dates</h3>
                 <button 
                   onClick={() => navigateMonth('next')}
                   className="p-2 hover:bg-gray-100 rounded"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-5 h-5 text-gray-800" />
                 </button>
               </div>
               
-              <div className="flex space-x-2 sm:space-x-4 overflow-x-auto justify-center">
+              {/* Calendar */}
+              <div className="flex">
                 {[0, 1, 2].map(offset => renderCalendar(offset))}
               </div>
             </div>
           </div>
 
-          {/* Booking Details Sidebar */}
-          <div className="space-y-6">
-            {/* Date Summary */}
-            <div className="bg-white border border-gray-200">
-              <div className="grid grid-cols-2">
-                <div className="bg-gray-800 text-white p-4 text-center">
-                  <div className="text-sm">Arrival</div>
-                </div>
-                <div className="bg-gray-800 text-white p-4 text-center">
-                  <div className="text-sm">Departure</div>
+          {/* Combined Booking Details - Exact Design */}
+          <div className="relative w-full max-w-sm mx-auto" style={{ height: '362px' }}>
+            {/* Header */}
+            <div className="relative w-full h-6 bg-gray-800 border border-gray-600">
+              <span className="absolute text-white text-xs font-normal leading-4 top-1.5 left-1/2 transform -translate-x-24" style={{ fontFamily: 'TAN - Angleton, sans-serif' }}>
+                Arrival
+              </span>
+              <span className="absolute text-white text-xs font-normal leading-4 top-1.5 left-1/2 transform translate-x-16" style={{ fontFamily: 'TAN - Angleton, sans-serif' }}>
+                Departure
+              </span>
+            </div>
+
+            {/* Date Display */}
+            <div className="relative w-full h-28">
+              {/* Arrival Date */}
+              <div className="absolute w-1/2 h-full bg-white border border-gray-600 left-0">
+                <div className="relative h-full flex flex-col items-center justify-center">
+                  <span className="text-3xl font-normal text-gray-700 mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', lineHeight: '61.536px' }}>
+                    {selectedDates.arrival ? new Date(selectedDates.arrival).getDate().toString().padStart(2, '0') : '01'}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                    {selectedDates.arrival ? months[new Date(selectedDates.arrival).getMonth()] : 'October'}
+                  </span>
                 </div>
               </div>
-              <div className="grid grid-cols-2">
-                <div className="p-6 text-center border-r border-gray-200">
-                  <div className="text-3xl font-light">
-                    {selectedDates.arrival ? new Date(selectedDates.arrival).getDate().toString().padStart(2, '0') : '--'}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {selectedDates.arrival ? months[new Date(selectedDates.arrival).getMonth()] : 'Month'}
-                  </div>
-                </div>
-                <div className="p-6 text-center">
-                  <div className="text-3xl font-light">
-                    {selectedDates.departure ? new Date(selectedDates.departure).getDate().toString().padStart(2, '0') : '--'}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {selectedDates.departure ? months[new Date(selectedDates.departure).getMonth()] : 'Month'}
-                  </div>
+              
+              {/* Departure Date */}
+              <div className="absolute w-1/2 h-full bg-white border border-gray-600 right-0">
+                <div className="relative h-full flex flex-col items-center justify-center">
+                  <span className="text-3xl font-normal text-gray-700 mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', lineHeight: '61.536px' }}>
+                    {selectedDates.departure ? new Date(selectedDates.departure).getDate().toString().padStart(2, '0') : '23'}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                    {selectedDates.departure ? months[new Date(selectedDates.departure).getMonth()] : 'December'}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Room & Guest Selection */}
-            <div className="bg-white border border-gray-200 p-4 space-y-4">
-              <div>
-                <select 
-                  value={rooms}
-                  onChange={(e) => setRooms(Number(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded text-gray-600"
-                >
-                  <option value={1}>1 Room</option>
-                  <option value={2}>2 Rooms</option>
-                  <option value={3}>3 Rooms</option>
-                </select>
+            {/* Room Selection */}
+            <div className="relative w-full h-11 bg-white border border-gray-600 mt-2.5">
+              <span className="absolute text-xs font-semibold text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                {rooms || 1} Room
+              </span>
+              <div className="absolute top-4.5 right-4">
+                <ChevronDown className="w-2 h-1.5 text-gray-600" />
               </div>
-              
-              <div>
-                <select 
-                  value={adults}
-                  onChange={(e) => setAdults(Number(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded text-gray-600"
-                >
-                  <option value={1}>1 Adult</option>
-                  <option value={2}>2 Adults</option>
-                  <option value={3}>3 Adults</option>
-                  <option value={4}>4 Adults</option>
-                  <option value={5}>5 Adults</option>
-                  <option value={6}>6 Adults</option>
-                  <option value={7}>7 Adults</option>
-                  <option value={8}>8 Adults</option>
-                </select>
-              </div>
-              
-              <div>
-                <select 
-                  value={children}
-                  onChange={(e) => setChildren(Number(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded text-gray-600"
-                >
-                  <option value={0}>0 Children</option>
-                  <option value={1}>1 Child</option>
-                  <option value={2}>2 Children</option>
-                  <option value={3}>3 Children</option>
-                  <option value={4}>4 Children</option>
-                </select>
-              </div>
-              
-              <div>
-                <select 
-                  value={selectedVillaId}
-                  onChange={(e) => setSelectedVillaId(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded text-gray-600"
-                >
-                  <option value="">Choose Your Villa</option>
-                  {allVillas.map((villa) => (
-                    <option key={villa.id} value={villa.id}>
-                      {villa.name} - ₹{villa.base_price.toLocaleString()}/night
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select 
+                value={rooms || 1}
+                onChange={(e) => setRooms(Number(e.target.value))}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                <option value={1}>1 Room</option>
+                <option value={2}>2 Rooms</option>
+                <option value={3}>3 Rooms</option>
+              </select>
+            </div>
 
-              {/* Check Availability Button */}
+            {/* Adults Selection */}
+            <div className="relative w-full h-11 bg-white border border-gray-600 mt-2">
+              <span className="absolute text-xs font-semibold text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                {adults || 2} Adults
+              </span>
+              <div className="absolute top-4.5 right-4">
+                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              </div>
+              <select 
+                value={adults || 2}
+                onChange={(e) => setAdults(Number(e.target.value))}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                <option value={1}>1 Adult</option>
+                <option value={2}>2 Adults</option>
+                <option value={3}>3 Adults</option>
+                <option value={4}>4 Adults</option>
+              </select>
+            </div>
+
+            {/* Children Selection */}
+            <div className="relative w-full h-11 bg-white border border-gray-600 mt-2">
+              <span className="absolute text-xs font-semibold text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                {children || 0} Children
+              </span>
+              <div className="absolute top-4.5 right-4">
+                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              </div>
+              <select 
+                value={children || 0}
+                onChange={(e) => setChildren(Number(e.target.value))}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                <option value={0}>0 Children</option>
+                <option value={1}>1 Child</option>
+                <option value={2}>2 Children</option>
+                <option value={3}>3 Children</option>
+                <option value={4}>4 Children</option>
+              </select>
+            </div>
+
+            {/* Villa Selection */}
+            <div className="relative w-full h-11 bg-white border border-gray-600 mt-2">
+              <span className="absolute text-xs font-semibold text-gray-400 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                {selectedVillaId ? allVillas.find(v => v.id === selectedVillaId)?.name || 'Choose Your Villa' : 'Choose Your Villa'}
+              </span>
+              <div className="absolute top-4.5 right-4">
+                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              </div>
+              <select 
+                value={selectedVillaId}
+                onChange={(e) => setSelectedVillaId(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                <option value="">Choose Your Villa</option>
+                {allVillas.map((villa) => (
+                  <option key={villa.id} value={villa.id}>
+                    {villa.name} - ₹{villa.base_price.toLocaleString()}/night
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Check Availability Button */}
+            <div className="mt-4">
               <button
                 onClick={checkAvailability}
                 disabled={!selectedDates.arrival || !selectedDates.departure || checkingAvailability}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded font-medium transition-colors flex items-center justify-center gap-2"
+                className={`w-full py-3 rounded font-medium transition-colors flex items-center justify-center gap-2 ${
+                  checkingAvailability
+                    ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                    : availabilityStatus === 'available'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : availabilityStatus === 'not-available'
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
                 {checkingAvailability ? (
                   <>
                     <LoadingSpinner size="sm" color="text-white" />
                     Checking...
                   </>
+                ) : availabilityStatus === 'available' ? (
+                  'Available'
+                ) : availabilityStatus === 'not-available' ? (
+                  'Not Available'
                 ) : (
                   'Check Availability'
                 )}
@@ -551,49 +649,6 @@ const DateVillaSelection = () => {
             </div>
           </div>
 
-          {/* Availability Results */}
-          {availabilityResults && (
-            <div className="bg-white border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Availability Results</h3>
-              
-              {/* Simple Villa Availability */}
-              <div className="space-y-3">
-                {availabilityResults.villas.map((villa) => (
-                  <div key={villa.id} className={`border-2 rounded-lg p-4 transition-all ${
-                    villa.available 
-                      ? 'border-green-200 bg-green-50' 
-                      : 'border-red-200 bg-red-50'
-                  }`}>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                        <h4 className="text-lg font-semibold text-gray-800">{villa.name}</h4>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium self-start ${
-                          villa.available 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          {villa.available ? 'Available' : 'Not Available'}
-                        </span>
-                      </div>
-                      
-                      {villa.available && (
-                        <button
-                          onClick={() => setSelectedVillaId(villa.id)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto ${
-                            selectedVillaId === villa.id
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-800 text-white hover:bg-gray-700'
-                          }`}
-                        >
-                          {selectedVillaId === villa.id ? 'Selected ✓' : 'Select Villa'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Villa Details Section */}

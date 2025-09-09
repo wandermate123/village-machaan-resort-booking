@@ -63,6 +63,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
+        angleton: ['Angleton', 'serif'],
       },
       spacing: {
         '18': '4.5rem',

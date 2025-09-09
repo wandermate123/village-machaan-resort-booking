@@ -48,16 +48,23 @@ const PackageSelection = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-light text-gray-800">Machaan</h1>
+    <div className="min-h-screen" style={{ backgroundColor: '#F3EEE7' }}>
+      {/* Header - Exact Vue.js Design */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '54px',
+          backgroundColor: '#f3eee7'
+        }}
+      >
+        <div className="flex items-center justify-between h-full px-6">
+          <h1 className="text-2xl font-light text-gray-800">Village Machaan</h1>
           <div className="flex items-center space-x-4">
-            <select className="text-sm border-none bg-transparent text-gray-600">
+            <select className="text-sm border-none bg-transparent">
               <option>English</option>
             </select>
-            <select className="text-sm border-none bg-transparent text-gray-600">
+            <select className="text-sm border-none bg-transparent">
               <option>US Dollar</option>
             </select>
             <button className="p-2">
@@ -67,26 +74,43 @@ const PackageSelection = () => {
         </div>
       </div>
 
+      {/* Navigation Border Line */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '1px',
+          backgroundColor: '#000000'
+        }}
+      />
+
       {/* Progress Steps */}
-      <div className="bg-white border-b border-gray-200 px-6 py-8">
+      <div className="border-b border-gray-200 px-6 py-8" style={{ backgroundColor: '#F3EEE7' }}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-center text-xl text-gray-800 mb-8">Select your Package</h2>
           
           <div className="flex items-center justify-center space-x-8">
             {[
-              { step: 1, label: 'Date & Accommodation Selection', active: false },
-              { step: 2, label: 'Package Selection', active: true },
-              { step: 3, label: 'Safari Selection', active: false },
-              { step: 4, label: 'Confirmation', active: false }
+              { step: 1, label: 'Date & Accommodation Selection', active: false, completed: true },
+              { step: 2, label: 'Package Selection', active: true, completed: false },
+              { step: 3, label: 'Safari Selection', active: false, completed: false },
+              { step: 4, label: 'Confirmation', active: false, completed: false }
             ].map((item, index) => (
               <div key={item.step} className="flex items-center">
                 <div className="flex flex-col items-center">
                   <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm ${
-                    item.active ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-400'
-                  }`}>
-                    {item.step}
+                     item.completed ? 'border-black bg-white text-black' :
+                     item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
+                   }`}>
+                    {item.completed ? (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      item.step
+                    )}
                   </div>
-                  <span className="text-xs text-gray-600 mt-2 text-center max-w-24">{item.label}</span>
+                  <span className="text-xs text-gray-600 mt-2 text-center max-w-32 font-serif leading-tight whitespace-nowrap">{item.label}</span>
                 </div>
                 {index < 3 && <div className="w-16 h-px bg-gray-300 mx-4 mt-[-20px]"></div>}
               </div>
@@ -95,13 +119,135 @@ const PackageSelection = () => {
         </div>
       </div>
 
-      {/* Booking Summary Bar */}
-      <div className="bg-blue-500 text-white px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-sm">
-          <span>You have selected accommodation for 2 adults from 01 October to 25 December</span>
-          <div className="flex items-center space-x-4">
-            <span>Your Night</span>
-            <span>Accommodation: ₹7,500 / night</span>
+      {/* Navigation Modal - Exact Vue.js Design */}
+      <div className="flex justify-center py-4">
+        <div 
+          className="relative"
+          style={{
+            width: '618px',
+            height: '48px'
+          }}
+        >
+          {/* Date Summary Section */}
+          <div 
+            className="absolute"
+            style={{
+              width: '568px',
+              height: '48px',
+              top: '0',
+              left: '50%',
+              backgroundColor: '#ffffff',
+              border: '0.2px solid #8b8881',
+              transform: 'translate(-45.6%, 0)',
+              zIndex: 5
+            }}
+          >
+            {/* Night Count Text */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: '120px',
+                height: '19px',
+                top: '8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                color: '#403b34',
+                fontFamily: 'TAN - Angleton, sans-serif',
+                fontSize: '12px',
+                fontWeight: '400',
+                lineHeight: '19px',
+                whiteSpace: 'nowrap',
+                zIndex: 8
+              }}
+            >
+              {state.checkIn && state.checkOut ? 
+                `${Math.ceil((new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) / (1000 * 60 * 60 * 24))} Night${Math.ceil((new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) / (1000 * 60 * 60 * 24)) > 1 ? 's' : ''}` : 
+                'Select Dates'
+              }
+            </div>
+            
+            {/* Date Details */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: '520px',
+                height: '11px',
+                top: '28px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                color: '#4f4f4f',
+                fontFamily: 'Quicksand, sans-serif',
+                fontSize: '10px',
+                fontWeight: '400',
+                lineHeight: '11px',
+                whiteSpace: 'nowrap',
+                zIndex: 7
+              }}
+            >
+              {state.checkIn && state.checkOut ? 
+                `Arrival : ${new Date(state.checkIn).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })} | Departure: ${new Date(state.checkOut).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}` : 
+                'Please select your arrival and departure dates'
+              }
+            </div>
+          </div>
+          
+          {/* Edit Button Section */}
+          <div 
+            className="absolute cursor-pointer"
+            style={{
+              width: '50px',
+              height: '48px',
+              top: '0',
+              left: '0',
+              backgroundColor: '#f9f7f3',
+              border: '0.2px solid #8b8880',
+              zIndex: 1
+            }}
+            onClick={handleBack}
+          >
+            {/* Arrow Icon */}
+            <div 
+              className="absolute"
+              style={{
+                width: '15px',
+                height: '15px',
+                top: '14px',
+                left: '18px',
+                background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUiIGhlaWdodD0iMTUiIHZpZXdCb3g9IjAgMCAxNSAxNSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOS4zNzUgMTEuMjVMNC4xMjUgNkw5LjM3NSAwLjc1TDEwLjEyNSAxLjUyNUw1LjYyNSA2TDEwLjEyNSAxMC40NzVMOS4zNzUgMTEuMjVaIiBmaWxsPSIjNEY0RjRGIi8+PC9zdmc+) no-repeat center',
+                backgroundSize: 'cover',
+                zIndex: 2
+              }}
+            />
+            
+            {/* Edit Text */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: '37px',
+                height: '11px',
+                top: '29px',
+                left: '7px',
+                color: '#4f4f4f',
+                fontFamily: 'Quicksand, sans-serif',
+                fontSize: '10px',
+                fontWeight: '600',
+                lineHeight: '11px',
+                whiteSpace: 'nowrap',
+                zIndex: 3
+              }}
+            >
+              Edit
+            </div>
           </div>
         </div>
       </div>
@@ -110,7 +256,6 @@ const PackageSelection = () => {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="text-center mb-12">
           <h2 className="text-2xl font-light text-gray-800 mb-2">Our Packages</h2>
-          <p className="text-gray-600">Choose from our curated experiences</p>
         </div>
 
         {/* Packages List */}

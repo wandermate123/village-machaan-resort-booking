@@ -236,16 +236,23 @@ const BookingSummary = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen" style={{ backgroundColor: '#F3EEE7' }}>
+      {/* Header - Exact Vue.js Design */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '54px',
+          backgroundColor: '#f3eee7'
+        }}
+      >
+        <div className="flex items-center justify-between h-full px-6">
           <h1 className="text-2xl font-light text-gray-800">Village Machaan</h1>
           <div className="flex items-center space-x-4">
-            <select className="text-sm border-none bg-transparent text-gray-600">
+            <select className="text-sm border-none bg-transparent">
               <option>English</option>
             </select>
-            <select className="text-sm border-none bg-transparent text-gray-600">
+            <select className="text-sm border-none bg-transparent">
               <option>INR (₹)</option>
             </select>
             <button className="p-2">
@@ -255,8 +262,18 @@ const BookingSummary = () => {
         </div>
       </div>
 
+      {/* Navigation Border Line */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '1px',
+          backgroundColor: '#000000'
+        }}
+      />
+
       {/* Progress Steps */}
-      <div className="bg-white border-b border-gray-200 px-6 py-8">
+      <div className="border-b border-gray-200 px-6 py-8" style={{ backgroundColor: '#F3EEE7' }}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-center text-xl text-gray-800 mb-8">Confirm Your Stay</h2>
           
@@ -269,10 +286,10 @@ const BookingSummary = () => {
             ].map((item, index) => (
               <div key={item.step} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm ${
-                    item.completed ? 'border-black bg-black text-white' :
-                    item.active ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-400'
-                  }`}>
+                   <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm ${
+                     item.completed ? 'border-black bg-white text-black' :
+                     item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
+                   }`}>
                     {item.completed ? (
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -281,7 +298,7 @@ const BookingSummary = () => {
                       item.step
                     )}
                   </div>
-                  <span className="text-xs text-gray-600 mt-2 text-center max-w-24">{item.label}</span>
+                  <span className="text-xs text-gray-600 mt-2 text-center max-w-32 font-serif leading-tight whitespace-nowrap">{item.label}</span>
                 </div>
                 {index < 3 && <div className="w-16 h-px bg-gray-300 mx-4 mt-[-20px]"></div>}
               </div>
@@ -291,7 +308,7 @@ const BookingSummary = () => {
       </div>
 
       {/* Date Summary Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="border-b border-gray-200 px-6 py-4" style={{ backgroundColor: '#F3EEE7' }}>
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button 
