@@ -10,6 +10,109 @@ const PackageSelection = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Calculate number of nights
+  const calculateNights = (checkIn: string, checkOut: string) => {
+    if (!checkIn || !checkOut) return 0;
+    
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    
+    // Check if dates are valid
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+    
+    const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return nights > 0 ? nights : 0;
+  };
+
+  // Calculate total package price based on duration
+  const calculatePackageTotal = (pkg: any) => {
+    if (!pkg || pkg.price === 0 || pkg.price === undefined || pkg.price === null) return 0;
+    
+    const nights = calculateNights(state.checkIn, state.checkOut);
+    const guests = state.guests || 0;
+    const price = Number(pkg.price) || 0;
+    
+    if (isNaN(price)) return 0;
+    
+    switch (pkg.duration) {
+      case 'Per night':
+        return price * nights;
+      case 'Per stay':
+        return price;
+      case 'Per person':
+        return price * guests;
+      case 'One-time':
+        return price;
+      default:
+        return price * nights; // Default to per night
+    }
+  };
+
+  // Calculate dynamic villa pricing based on guest count
+  const calculateVillaTotal = () => {
+    const nights = calculateNights(state.checkIn, state.checkOut);
+    const baseVillaPrice = state.selectedVilla?.base_price || 0;
+    const guests = state.guests || 0;
+    
+    if (baseVillaPrice === 0 || nights === 0) return 0;
+    
+    // Base price is for 2 people
+    const baseTotal = baseVillaPrice * nights;
+    
+    // Additional guests beyond 2 people
+    const extraGuests = Math.max(0, guests - 2);
+    const extraGuestCharge = 2000; // ₹2000 per extra person per night
+    const extraGuestTotal = extraGuests * extraGuestCharge * nights;
+    
+    return baseTotal + extraGuestTotal;
+  };
+
+  // Calculate dynamic package pricing based on guest count
+  const calculatePackageTotalWithGuests = (pkg: any) => {
+    const basePackageTotal = calculatePackageTotal(pkg);
+    const guests = state.guests || 0;
+    const nights = calculateNights(state.checkIn, state.checkOut);
+    
+    if (basePackageTotal === 0) return 0;
+    
+    // Additional guests beyond 2 people for packages (breakfast)
+    const extraGuests = Math.max(0, guests - 2);
+    const extraGuestCharge = 500; // ₹500 per extra person per night for breakfast
+    const extraGuestTotal = extraGuests * extraGuestCharge * nights;
+    
+    return basePackageTotal + extraGuestTotal;
+  };
+
+  // Calculate final total price including villa and package
+  const calculateFinalTotal = (pkg: any) => {
+    // Debug logging for state
+    console.log('Package Selection State:', {
+      checkIn: state.checkIn,
+      checkOut: state.checkOut,
+      selectedVilla: state.selectedVilla,
+      guests: state.guests
+    });
+    
+    const villaTotal = calculateVillaTotal();
+    const packageTotal = calculatePackageTotalWithGuests(pkg);
+    
+    // Debug logging
+    if (isNaN(villaTotal) || isNaN(packageTotal)) {
+      console.log('NaN detected:', {
+        villaTotal,
+        packageTotal,
+        pkg: pkg?.name,
+        pkgPrice: pkg?.price,
+        guests: state.guests,
+        selectedVilla: state.selectedVilla
+      });
+    }
+    
+    // Ensure all values are numbers
+    const finalTotal = (villaTotal || 0) + (packageTotal || 0);
+    return isNaN(finalTotal) ? 0 : finalTotal;
+  };
+
   useEffect(() => {
     fetchPackages();
   }, []);
@@ -59,12 +162,16 @@ const PackageSelection = () => {
         }}
       >
         <div className="flex items-center justify-between h-full px-6">
-          <h1 className="text-2xl font-light text-gray-800">Village Machaan</h1>
+          <img 
+            src="/images/village-machaan-logo.png" 
+            alt="Village Machaan" 
+            className="h-16 w-auto mt-1"
+          />
           <div className="flex items-center space-x-4">
-            <select className="text-sm border-none bg-transparent">
+            <select className="text-sm border-none bg-transparent" style={{ color: '#3F3E3E', accentColor: '#3F3E3E' }}>
               <option>English</option>
             </select>
-            <select className="text-sm border-none bg-transparent">
+            <select className="text-sm border-none bg-transparent" style={{ color: '#3F3E3E', accentColor: '#3F3E3E' }}>
               <option>US Dollar</option>
             </select>
             <button className="p-2">
@@ -87,34 +194,41 @@ const PackageSelection = () => {
       {/* Progress Steps */}
       <div className="border-b border-gray-200 px-6 py-8" style={{ backgroundColor: '#F3EEE7' }}>
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-center text-xl text-gray-800 mb-8">Select your Package</h2>
+          <h2 className="text-center text-gray-800 mb-8" style={{ fontSize: '18px', fontWeight: '400' }}>Select your Package</h2>
           
-          <div className="flex items-center justify-center space-x-8">
+          <div className="flex items-center justify-center space-x-8 relative">
             {[
               { step: 1, label: 'Date & Accommodation Selection', active: false, completed: true },
               { step: 2, label: 'Package Selection', active: true, completed: false },
               { step: 3, label: 'Safari Selection', active: false, completed: false },
               { step: 4, label: 'Confirmation', active: false, completed: false }
             ].map((item, index) => (
-              <div key={item.step} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm ${
-                     item.completed ? 'border-black bg-white text-black' :
-                     item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
-                   }`}>
-                    {item.completed ? (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      item.step
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-600 mt-2 text-center max-w-32 font-serif leading-tight whitespace-nowrap">{item.label}</span>
+              <div key={item.step} className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
+                   item.completed ? 'border-black bg-white text-black' :
+                   item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
+                 }`}>
+                  {item.completed ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <span className="text-base font-medium" style={{ fontSize: '16px' }}>{item.step}</span>
+                  )}
                 </div>
-                {index < 3 && <div className="w-16 h-px bg-gray-300 mx-4 mt-[-20px]"></div>}
+                <span 
+                  className="text-xs text-gray-600 mt-2 text-center font-serif leading-tight"
+                  style={{ 
+                    whiteSpace: 'nowrap',
+                    width: '120px'
+                  }}
+                >
+                  {item.label}
+                </span>
               </div>
             ))}
+            {/* Connecting Lines */}
+            <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-3/4 h-px bg-gray-300 -z-10"></div>
           </div>
         </div>
       </div>
@@ -271,6 +385,13 @@ const PackageSelection = () => {
         <div className="space-y-8">
           {packages.map((pkg, index) => {
             const isSelected = state.selectedPackage?.id === pkg.id;
+            const packageTotal = calculatePackageTotal(pkg);
+            const packageTotalWithGuests = calculatePackageTotalWithGuests(pkg);
+            const villaTotal = calculateVillaTotal();
+            const finalTotal = calculateFinalTotal(pkg);
+            const nights = calculateNights(state.checkIn, state.checkOut);
+            const guests = state.guests || 0;
+            const extraGuests = Math.max(0, guests - 2);
             
             return (
               <div key={pkg.id} className="bg-white border border-gray-200 overflow-hidden">
@@ -280,7 +401,8 @@ const PackageSelection = () => {
                     <img 
                       src={(pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/glass-cottage/main.jpg'}
                       alt={pkg.name}
-                      className="w-full h-80 lg:h-96 object-cover"
+                      className="w-full h-full object-cover"
+                      style={{ minHeight: '400px' }}
                     />
                     <button className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full">
                       <ChevronLeft className="w-5 h-5" />
@@ -300,14 +422,37 @@ const PackageSelection = () => {
                       </div>
                       <div className="text-right ml-8">
                         <div className="text-sm text-gray-600 mb-1">
-                          {pkg.price === 0 ? 'Base Villa Price' : `+₹${pkg.price.toLocaleString()} per night`}
+                          {pkg.price === 0 ? 'Villa + Package' : 
+                           pkg.duration === 'Per night' ? `Villa + ₹${pkg.price.toLocaleString()}/night` :
+                           pkg.duration === 'Per stay' ? 'Villa + One-time fee' :
+                           pkg.duration === 'Per person' ? `Villa + ₹${pkg.price.toLocaleString()}/person` :
+                           'Villa + One-time fee'}
                         </div>
-                        <div className="text-2xl font-light text-gray-800 mb-1">
-                          {pkg.price === 0 ? 'No Extra Cost' : `Extra ${pkg.duration}`}
+                        <div className="text-3xl font-light text-gray-800 mb-1">
+                          {!state.checkIn || !state.checkOut ? 'Select dates first' :
+                           !state.selectedVilla ? 'Select villa first' :
+                           finalTotal > 0 ? `₹${finalTotal.toLocaleString()}` : 'Calculating...'}
                         </div>
-                        <div className="text-sm text-gray-600 mb-4">
-                          {pkg.price === 0 ? 'Villa rate only' : 'Added to villa rate'}
+                        <div className="text-sm text-gray-600 mb-2">
+                          {!state.checkIn || !state.checkOut ? 'Please select dates' :
+                           !state.selectedVilla ? 'Please select a villa' :
+                           pkg.price === 0 ? 'Villa rate only' : 
+                           `Total for ${nights} night${nights !== 1 ? 's' : ''} (${guests} guest${guests !== 1 ? 's' : ''})`}
                         </div>
+                        {finalTotal > 0 && state.selectedVilla && (
+                          <div className="text-xs text-gray-500 mb-4 space-y-1">
+                            <div>Villa: ₹{villaTotal.toLocaleString()}</div>
+                            {pkg.price > 0 && (
+                              <div>Package: ₹{packageTotalWithGuests.toLocaleString()}</div>
+                            )}
+                            {extraGuests > 0 && (
+                              <div className="text-orange-600">
+                                +₹{(extraGuests * 2000 * nights).toLocaleString()} extra guests (room)
+                                {pkg.price > 0 && ` + ₹${(extraGuests * 500 * nights).toLocaleString()} (breakfast)`}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <button 
                           onClick={() => handlePackageSelect(pkg)}
                           className={`px-6 py-2 text-sm font-medium transition-colors ${
@@ -339,8 +484,15 @@ const PackageSelection = () => {
                       <p className="text-xs text-gray-500">
                         {pkg.price === 0 
                           ? 'Basic accommodation without meals - explore local dining options'
-                          : 'Breakfast included with your villa stay - perfect way to start your day'
+                          : pkg.duration === 'Per night' 
+                            ? `Breakfast included for all ${nights} night${nights !== 1 ? 's' : ''} of your stay`
+                            : pkg.duration === 'Per person'
+                              ? `Breakfast included for all ${state.guests} person${state.guests !== 1 ? 's' : ''} during your stay`
+                              : 'Breakfast included with your villa stay - perfect way to start your day'
                         }
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Final price includes villa accommodation + package benefits
                       </p>
                     </div>
                   </div>

@@ -8,9 +8,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <TreePine className="w-8 h-8 text-secondary-600" />
-              <span className="text-2xl font-serif font-bold">Village Machaan</span>
+            <div className="flex items-center mb-4">
+              <img 
+                src="/images/village-machaan-logo.svg" 
+                alt="Village Machaan" 
+                className="h-16 w-auto"
+              />
             </div>
             <p className="text-primary-200 leading-relaxed mb-6">
               Experience the perfect blend of luxury and nature at Village Machaan. 

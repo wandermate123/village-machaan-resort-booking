@@ -314,3 +314,5 @@ BEGIN
   RAISE NOTICE 'Created view: occupancy_view';
   RAISE NOTICE 'Inserted sample data for all villas';
 END $$;
+
+

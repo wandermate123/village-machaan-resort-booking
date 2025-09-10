@@ -340,3 +340,5 @@ BEGIN
   RAISE NOTICE 'Total: % units across 3 villas', hornbill_count + kingfisher_count + glass_count;
   RAISE NOTICE 'Check-in: 1:30 PM, Check-out: 11:30 AM';
 END $$;
+
+

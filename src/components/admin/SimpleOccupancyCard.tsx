@@ -203,3 +203,5 @@ const SimpleOccupancyCard = () => {
 };
 
 export default SimpleOccupancyCard;
+
+

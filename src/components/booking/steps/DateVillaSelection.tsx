@@ -201,7 +201,7 @@ const DateVillaSelection = () => {
         className="relative bg-white flex-shrink-0"
         style={{
           width: '200px',
-          height: '250px',
+          height: '300px',
           border: '0.5px solid #3F3E3E',
           boxSizing: 'border-box'
         }}
@@ -248,7 +248,7 @@ const DateVillaSelection = () => {
           className="absolute"
           style={{
             width: '180px',
-            height: '100px',
+            height: '140px',
             left: 'calc(50% - 180px/2)',
             top: '140px'
           }}
@@ -298,7 +298,7 @@ const DateVillaSelection = () => {
             
             // Calculate exact positioning based on the CSS specifications
             const leftPositions = [5, 30, 55, 80, 105, 130, 155];
-            const topPositions = [20, 35, 50, 65, 80];
+            const topPositions = [20, 35, 50, 65, 80, 95, 110];
             
             const left = leftPositions[col];
             const top = topPositions[row] || 80;
@@ -363,7 +363,11 @@ const DateVillaSelection = () => {
         }}
       >
         <div className="flex items-center justify-between h-full px-6">
-          <h1 className="text-2xl font-light text-gray-800">Village Machaan</h1>
+          <img 
+            src="/images/village-machaan-logo.png" 
+            alt="Village Machaan" 
+            className="h-16 w-auto mt-1"
+          />
           <div className="flex items-center space-x-4">
             <select className="text-sm border-none bg-transparent">
               <option>English</option>
@@ -399,7 +403,7 @@ const DateVillaSelection = () => {
                height: '29px',
                color: '#3f3e3e',
                fontFamily: 'TAN - Angleton, sans-serif',
-               fontSize: '15px',
+               fontSize: '18px',
                fontWeight: '400',
                lineHeight: '28.845px',
                textAlign: 'center'
@@ -408,60 +412,47 @@ const DateVillaSelection = () => {
              Select your dates at Village Machaan
            </div>
            
-           {/* Progress Circles and Connecting Line */}
-           <div className="flex items-center justify-center relative">
-             {/* Progress Circles */}
-             <div className="flex items-center justify-center space-x-48">
-               {[1, 2, 3, 4].map((step, index) => (
-                 <div key={step} className="relative">
-                   {/* Circle */}
-                   <div 
-                     className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
-                     style={{
-                       backgroundColor: step === 1 ? '#ffffff' : '#f3eee7',
-                       borderColor: step === 1 ? '#403b34' : '#d1d5db'
+           {/* Progress Circles and Labels */}
+           <div className="flex items-center justify-center space-x-48">
+             {[1, 2, 3, 4].map((step, index) => (
+               <div key={step} className="flex flex-col items-center">
+                 {/* Circle */}
+                 <div 
+                   className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
+                   style={{
+                     backgroundColor: step === 1 ? '#ffffff' : '#f3eee7',
+                     borderColor: step === 1 ? '#403b34' : '#d1d5db'
+                   }}
+                 >
+                   <span 
+                     className="text-sm font-normal"
+                     style={{ 
+                       fontFamily: 'TAN - AEGEAN, sans-serif',
+                       color: step === 1 ? '#403b34' : '#9ca3af',
+                       fontSize: '14px'
                      }}
                    >
-                     <span 
-                       className="text-xs font-normal"
-                       style={{ 
-                         fontFamily: 'TAN - AEGEAN, sans-serif',
-                         color: step === 1 ? '#403b34' : '#9ca3af'
-                       }}
-                     >
-                       {step}
-                     </span>
-                   </div>
+                     {step}
+                   </span>
                  </div>
-               ))}
-             </div>
-             
-             {/* Connecting Line */}
-             <div 
-               className="absolute top-3 w-96 h-0.5"
-               style={{
-                 background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTk4IiBoZWlnaHQ9IjIiIHZpZXdCb3g9IjAgMCA1OTggMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMSAxSDU5N1YxSDFaIiBmaWxsPSIjRkVGQkY3Ii8+PC9zdmc+) no-repeat center',
-                 backgroundSize: 'cover',
-                 transform: 'translateX(-50%)'
-               }}
-             />
-           </div>
-           
-           {/* Progress Labels */}
-           <div className="flex items-center justify-center space-x-48 mt-1">
-             {[
-               'Date & Accommodation Selection',
-               'Package Selection', 
-               'Safari Selection',
-               'Confirmation'
-             ].map((label, index) => (
-               <span 
-                 key={index}
-                 className="text-xs text-gray-600 text-center w-32"
-                 style={{ fontFamily: 'TAN - Angleton, sans-serif' }}
-               >
-                 {label}
-               </span>
+                 
+                 {/* Label */}
+                 <span 
+                   className="text-xs text-gray-600 text-center mt-2"
+                   style={{ 
+                     fontFamily: 'TAN - Angleton, sans-serif',
+                     whiteSpace: 'nowrap',
+                     width: '120px'
+                   }}
+                 >
+                   {[
+                     'Date & Accommodation Selection',
+                     'Package Selection', 
+                     'Safari Selection',
+                     'Confirmation'
+                   ][index]}
+                 </span>
+               </div>
              ))}
            </div>
          </div>
@@ -470,41 +461,62 @@ const DateVillaSelection = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Calendar Section */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border border-gray-200">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-black">
-                <button 
-                  onClick={() => navigateMonth('prev')}
-                  className="p-2 hover:bg-gray-100 rounded"
-                >
-                  <ChevronLeft className="w-5 h-5 text-gray-800" />
-                </button>
-                <h3 className="text-lg font-serif text-gray-800">Select Your Dates</h3>
-                <button 
-                  onClick={() => navigateMonth('next')}
-                  className="p-2 hover:bg-gray-100 rounded"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-800" />
-                </button>
-              </div>
-              
-              {/* Calendar */}
-              <div className="flex">
-                {[0, 1, 2].map(offset => renderCalendar(offset))}
+            {/* Calendar Section */}
+            <div className="lg:col-span-2">
+              <div style={{ height: '362px' }}>
+                {/* Header */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <button 
+                      onClick={() => navigateMonth('prev')}
+                      className="p-2 hover:bg-gray-100 rounded"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-800" />
+                    </button>
+                    <h3 className="text-lg font-serif text-gray-800">Select Your Dates</h3>
+                    <button 
+                      onClick={() => navigateMonth('next')}
+                      className="p-2 hover:bg-gray-100 rounded"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-800" />
+                    </button>
+                  </div>
+                  <div className="w-full border-b border-black"></div>
+                </div>
+                
+                {/* Calendar */}
+                <div className="flex h-full justify-center">
+                  {[0, 1, 2].map(offset => renderCalendar(offset))}
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Combined Booking Details - Exact Design */}
           <div className="relative w-full max-w-sm mx-auto" style={{ height: '362px' }}>
             {/* Header */}
-            <div className="relative w-full h-6 bg-gray-800 border border-gray-600">
-              <span className="absolute text-white text-xs font-normal leading-4 top-1.5 left-1/2 transform -translate-x-24" style={{ fontFamily: 'TAN - Angleton, sans-serif' }}>
+            <div className="relative w-full h-6 border border-gray-600" style={{ backgroundColor: '#3F3E3E' }}>
+              <span 
+                className="absolute text-white text-xs font-normal flex items-center justify-center"
+                style={{ 
+                  fontFamily: 'TAN - Angleton, sans-serif',
+                  top: '0',
+                  left: '0',
+                  width: '50%',
+                  height: '100%'
+                }}
+              >
                 Arrival
               </span>
-              <span className="absolute text-white text-xs font-normal leading-4 top-1.5 left-1/2 transform translate-x-16" style={{ fontFamily: 'TAN - Angleton, sans-serif' }}>
+              <span 
+                className="absolute text-white text-xs font-normal flex items-center justify-center"
+                style={{ 
+                  fontFamily: 'TAN - Angleton, sans-serif',
+                  top: '0',
+                  right: '0',
+                  width: '50%',
+                  height: '100%'
+                }}
+              >
                 Departure
               </span>
             </div>
@@ -514,10 +526,10 @@ const DateVillaSelection = () => {
               {/* Arrival Date */}
               <div className="absolute w-1/2 h-full bg-white border border-gray-600 left-0">
                 <div className="relative h-full flex flex-col items-center justify-center">
-                  <span className="text-3xl font-normal text-gray-700 mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', lineHeight: '61.536px' }}>
-                    {selectedDates.arrival ? new Date(selectedDates.arrival).getDate().toString().padStart(2, '0') : '01'}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                    <span className="font-normal mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', fontSize: '64px', lineHeight: '1', color: '#3F3E3E' }}>
+                      {selectedDates.arrival ? new Date(selectedDates.arrival).getDate().toString().padStart(2, '0') : '01'}
+                    </span>
+                  <span className="text-xs font-normal text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
                     {selectedDates.arrival ? months[new Date(selectedDates.arrival).getMonth()] : 'October'}
                   </span>
                 </div>
@@ -526,10 +538,10 @@ const DateVillaSelection = () => {
               {/* Departure Date */}
               <div className="absolute w-1/2 h-full bg-white border border-gray-600 right-0">
                 <div className="relative h-full flex flex-col items-center justify-center">
-                  <span className="text-3xl font-normal text-gray-700 mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', lineHeight: '61.536px' }}>
-                    {selectedDates.departure ? new Date(selectedDates.departure).getDate().toString().padStart(2, '0') : '23'}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+                    <span className="font-normal mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', fontSize: '64px', lineHeight: '1', color: '#3F3E3E' }}>
+                      {selectedDates.departure ? new Date(selectedDates.departure).getDate().toString().padStart(2, '0') : '23'}
+                    </span>
+                  <span className="text-xs font-normal text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
                     {selectedDates.departure ? months[new Date(selectedDates.departure).getMonth()] : 'December'}
                   </span>
                 </div>
@@ -538,16 +550,20 @@ const DateVillaSelection = () => {
 
             {/* Room Selection */}
             <div className="relative w-full h-11 bg-white border border-gray-600 mt-2.5">
-              <span className="absolute text-xs font-semibold text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+              <span className="absolute text-xs font-normal text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
                 {rooms || 1} Room
               </span>
-              <div className="absolute top-4.5 right-4">
-                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              <div className="absolute top-3 right-3">
+                <ChevronDown className="w-4 h-4 text-gray-600" />
               </div>
               <select 
                 value={rooms || 1}
                 onChange={(e) => setRooms(Number(e.target.value))}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                style={{ 
+                  color: '#3F3E3E',
+                  accentColor: '#3F3E3E'
+                }}
               >
                 <option value={1}>1 Room</option>
                 <option value={2}>2 Rooms</option>
@@ -557,16 +573,20 @@ const DateVillaSelection = () => {
 
             {/* Adults Selection */}
             <div className="relative w-full h-11 bg-white border border-gray-600 mt-2">
-              <span className="absolute text-xs font-semibold text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+              <span className="absolute text-xs font-normal text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
                 {adults || 2} Adults
               </span>
-              <div className="absolute top-4.5 right-4">
-                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              <div className="absolute top-3 right-3">
+                <ChevronDown className="w-4 h-4 text-gray-600" />
               </div>
               <select 
                 value={adults || 2}
                 onChange={(e) => setAdults(Number(e.target.value))}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                style={{ 
+                  color: '#3F3E3E',
+                  accentColor: '#3F3E3E'
+                }}
               >
                 <option value={1}>1 Adult</option>
                 <option value={2}>2 Adults</option>
@@ -577,16 +597,20 @@ const DateVillaSelection = () => {
 
             {/* Children Selection */}
             <div className="relative w-full h-11 bg-white border border-gray-600 mt-2">
-              <span className="absolute text-xs font-semibold text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+              <span className="absolute text-xs font-normal text-gray-700 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
                 {children || 0} Children
               </span>
-              <div className="absolute top-4.5 right-4">
-                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              <div className="absolute top-3 right-3">
+                <ChevronDown className="w-4 h-4 text-gray-600" />
               </div>
               <select 
                 value={children || 0}
                 onChange={(e) => setChildren(Number(e.target.value))}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                style={{ 
+                  color: '#3F3E3E',
+                  accentColor: '#3F3E3E'
+                }}
               >
                 <option value={0}>0 Children</option>
                 <option value={1}>1 Child</option>
@@ -598,16 +622,20 @@ const DateVillaSelection = () => {
 
             {/* Villa Selection */}
             <div className="relative w-full h-11 bg-white border border-gray-600 mt-2">
-              <span className="absolute text-xs font-semibold text-gray-400 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
+              <span className="absolute text-xs font-normal text-gray-400 top-4 left-4" style={{ fontFamily: 'Quicksand, sans-serif' }}>
                 {selectedVillaId ? allVillas.find(v => v.id === selectedVillaId)?.name || 'Choose Your Villa' : 'Choose Your Villa'}
               </span>
-              <div className="absolute top-4.5 right-4">
-                <ChevronDown className="w-2 h-1.5 text-gray-600" />
+              <div className="absolute top-3 right-3">
+                <ChevronDown className="w-4 h-4 text-gray-600" />
               </div>
               <select 
                 value={selectedVillaId}
                 onChange={(e) => setSelectedVillaId(e.target.value)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                style={{ 
+                  color: '#3F3E3E',
+                  accentColor: '#3F3E3E'
+                }}
               >
                 <option value="">Choose Your Villa</option>
                 {allVillas.map((villa) => (
@@ -630,8 +658,27 @@ const DateVillaSelection = () => {
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : availabilityStatus === 'not-available'
                     ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'text-white'
                 }`}
+                style={{
+                  backgroundColor: checkingAvailability 
+                    ? '#D1D5DB' 
+                    : availabilityStatus === 'available'
+                    ? '#059669'
+                    : availabilityStatus === 'not-available'
+                    ? '#DC2626'
+                    : '#3F3E3E'
+                }}
+                onMouseEnter={(e) => {
+                  if (!checkingAvailability && !availabilityStatus) {
+                    e.target.style.backgroundColor = '#2A2929';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!checkingAvailability && !availabilityStatus) {
+                    e.target.style.backgroundColor = '#3F3E3E';
+                  }
+                }}
               >
                 {checkingAvailability ? (
                   <>
@@ -652,11 +699,11 @@ const DateVillaSelection = () => {
         </div>
 
         {/* Villa Details Section */}
-        <div className="mt-12 space-y-12">
+        <div className="mt-32 px-4 sm:px-6 space-y-12">
           {/* Selected Villa Details */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-light text-gray-800 mb-2">Accommodation Details</h2>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-light mb-2" style={{ color: '#3F3E3E' }}>Accommodation Details</h2>
+            <p style={{ color: '#3F3E3E' }}>
               {selectedVilla ? `Details for ${selectedVilla.name}` : 'Select a villa to see details'}
             </p>
           </div>
@@ -669,39 +716,97 @@ const DateVillaSelection = () => {
                   <ImageDebugger
                     imagePath={selectedVilla.images?.[0] || '/images/glass-cottage/main.jpg'}
                     alt={selectedVilla.name}
-                    className="w-full h-64 sm:h-80 lg:h-96 object-cover"
+                    className="w-full h-full object-cover"
+                    style={{ minHeight: '400px' }}
                   />
                 </div>
 
                 {/* Villa Details */}
                 <div className="p-4 sm:p-6 lg:p-8">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-4 sm:space-y-0">
-                    <div className="flex-1">
-                      <h3 className="text-xl sm:text-2xl font-light text-gray-800 mb-2">{selectedVilla.name}</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed mb-4">{selectedVilla.description}</p>
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm text-gray-600 mb-4">
-                        <div className="flex items-center">
-                          <Users className="w-4 h-4 mr-1 flex-shrink-0" />
-                          <span>Max {selectedVilla.max_guests} guests</span>
-                        </div>
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                          <span>Forest location</span>
-                        </div>
+                  <div className="mb-4">
+                    {/* Villa Title */}
+                    <h3 className="text-xl sm:text-2xl font-light mb-3" style={{ color: '#3F3E3E' }}>{selectedVilla.name}</h3>
+                    
+                    {/* Description and Pricing Row */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 mr-6">
+                        <p className="text-sm" style={{ color: '#3F3E3E', lineHeight: '1.3' }}>{selectedVilla.description}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-sm" style={{ color: '#3F3E3E' }}>From</div>
+                        <div className="text-xl sm:text-2xl font-light" style={{ color: '#3F3E3E' }}>₹{selectedVilla.base_price.toLocaleString()}</div>
+                        <div className="text-sm" style={{ color: '#3F3E3E' }}>/ night</div>
                       </div>
                     </div>
-                    <div className="text-left sm:text-right">
-                      <div className="text-sm text-gray-600">From</div>
-                      <div className="text-xl sm:text-2xl font-light">₹{selectedVilla.base_price.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600">/ night</div>
+
+                    {/* Check Availability Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={checkAvailability}
+                        disabled={!selectedDates.arrival || !selectedDates.departure || checkingAvailability}
+                        className={`px-6 py-2 rounded font-medium transition-colors flex items-center justify-center gap-2 ${
+                          checkingAvailability
+                            ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                            : availabilityStatus === 'available'
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : availabilityStatus === 'not-available'
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'text-white'
+                        }`}
+                        style={{
+                          backgroundColor: checkingAvailability 
+                            ? '#D1D5DB' 
+                            : availabilityStatus === 'available'
+                            ? '#059669'
+                            : availabilityStatus === 'not-available'
+                            ? '#DC2626'
+                            : '#3F3E3E'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!checkingAvailability && !availabilityStatus) {
+                            e.target.style.backgroundColor = '#2A2929';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!checkingAvailability && !availabilityStatus) {
+                            e.target.style.backgroundColor = '#3F3E3E';
+                          }
+                        }}
+                      >
+                        {checkingAvailability ? (
+                          <>
+                            <LoadingSpinner size="sm" color="text-white" />
+                            Checking...
+                          </>
+                        ) : availabilityStatus === 'available' ? (
+                          'Available'
+                        ) : availabilityStatus === 'not-available' ? (
+                          'Not Available'
+                        ) : (
+                          'Check Availability'
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Guest and Location Info */}
+                    <div className="flex items-center space-x-4 text-sm mb-4" style={{ color: '#3F3E3E' }}>
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-1 flex-shrink-0" />
+                        <span>Max {selectedVilla.max_guests} guests</span>
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                        <span>Forest location</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Amenities Grid */}
                   <div className="mb-6">
-                    <h4 className="font-medium text-gray-800 mb-3">Amenities</h4>
                     {selectedVilla.id === 'kingfisher-villa' ? (
-                      <div className="relative w-full overflow-hidden">
+                      <div>
+                        <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>
+                        <div className="relative w-full overflow-hidden">
                         <img 
                           src="/images/kingfisher/amenities-icons.png" 
                           alt="Kingfisher villa amenities" 
@@ -715,47 +820,60 @@ const DateVillaSelection = () => {
                             console.log('Amenities image loaded successfully');
                           }}
                         />
+                        </div>
                       </div>
                     ) : selectedVilla.id === 'glass-cottage' ? (
                       <div className="relative w-full overflow-hidden">
-                        <img 
-                          src="/images/glass-cottage/main.jpg" 
-                          alt="Glass Cottage amenities" 
-                          className="w-full max-w-sm mx-auto h-auto object-cover rounded-lg"
-                          style={{ minHeight: '120px' }}
-                          onError={(e) => {
-                            console.error('Failed to load amenities image:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                          onLoad={() => {
-                            console.log('Glass Cottage amenities image loaded successfully');
-                          }}
-                        />
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>
+                          </div>
+                          <div className="ml-4">
+                            <img 
+                              src="/images/glass-cottage/main.jpg" 
+                              alt="Glass Cottage" 
+                              className="w-20 h-20 object-cover rounded-lg"
+                              onError={(e) => {
+                                console.error('Failed to load Glass Cottage image:', e);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              onLoad={() => {
+                                console.log('Glass Cottage image loaded successfully');
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     ) : selectedVilla.id === 'hornbill-villa' ? (
-                      <div className="relative w-full overflow-hidden">
-                        <img 
-                          src="/images/hornbill/amenities-icons.png" 
-                          alt="Hornbill villa amenities" 
-                          className="w-full max-w-sm mx-auto h-auto object-contain"
-                          style={{ minHeight: '120px' }}
-                          onError={(e) => {
-                            console.error('Failed to load amenities image:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                          onLoad={() => {
-                            console.log('Hornbill villa amenities image loaded successfully');
-                          }}
-                        />
+                      <div>
+                        <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>
+                        <div className="relative w-full overflow-hidden">
+                          <img 
+                            src="/images/hornbill/amenities-icons.png" 
+                            alt="Hornbill villa amenities" 
+                            className="w-full max-w-sm mx-auto h-auto object-contain"
+                            style={{ minHeight: '120px' }}
+                            onError={(e) => {
+                              console.error('Failed to load amenities image:', e);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('Hornbill villa amenities image loaded successfully');
+                            }}
+                          />
+                        </div>
                       </div>
                     ) : (
+                      <div>
+                        <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedVilla.amenities?.slice(0, 8).map((amenity, index) => (
-                          <div key={index} className="flex items-center text-sm text-gray-600">
-                            <Star className="w-3 h-3 mr-2 text-secondary-600 flex-shrink-0" />
+                          <div key={index} className="flex items-center text-sm" style={{ color: '#3F3E3E' }}>
+                            <Star className="w-3 h-3 mr-2 flex-shrink-0" style={{ color: '#3F3E3E' }} />
                             <span className="truncate">{amenity}</span>
                           </div>
                         ))}
+                      </div>
                       </div>
                     )}
                   </div>
@@ -763,7 +881,7 @@ const DateVillaSelection = () => {
                   {/* Availability Status */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Availability Status:</span>
+                      <span className="text-sm" style={{ color: '#3F3E3E' }}>Availability Status:</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         availableVillas.some(v => v.id === selectedVilla.id)
                           ? 'bg-green-100 text-green-700'

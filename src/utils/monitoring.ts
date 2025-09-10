@@ -307,3 +307,4 @@ export class MonitoringService {
 if (typeof window !== 'undefined') {
   MonitoringService.init();
 }
+

@@ -19,9 +19,12 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <TreePine className="w-8 h-8 text-primary-800 group-hover:text-secondary-600 transition-colors" />
-            <span className="text-xl font-serif font-bold text-primary-950">Village Machaan</span>
+          <Link to="/" className="flex items-center group">
+            <img 
+              src="/images/village-machaan-logo.svg" 
+              alt="Village Machaan" 
+              className="h-12 w-auto group-hover:opacity-90 transition-opacity"
+            />
           </Link>
 
           {/* Desktop Navigation */}

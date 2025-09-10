@@ -21,18 +21,25 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
             <Menu className="w-6 h-6" />
           </button>
           
-          <div>
-            <h1 className="text-xl font-semibold text-primary-950">
-              Welcome back, {user?.name}
-            </h1>
-            <p className="text-primary-600 text-sm">
-              {new Date().toLocaleDateString('en-IN', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/images/village-machaan-logo.png" 
+              alt="Village Machaan" 
+              className="h-16 w-auto mt-1"
+            />
+            <div>
+              <h1 className="text-xl font-semibold text-primary-950">
+                Welcome back, {user?.name}
+              </h1>
+              <p className="text-primary-600 text-sm">
+                {new Date().toLocaleDateString('en-IN', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+            </div>
           </div>
         </div>
 

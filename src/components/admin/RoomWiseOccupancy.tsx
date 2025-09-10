@@ -282,3 +282,5 @@ const RoomWiseOccupancy = () => {
 };
 
 export default RoomWiseOccupancy;
+
+

@@ -78,3 +78,5 @@ CREATE INDEX IF NOT EXISTS idx_booking_units_dates ON booking_units(check_in, ch
 
 -- Success message
 SELECT 'Room allocation system setup completed! You can now use the room allocation features.' as message;
+
+

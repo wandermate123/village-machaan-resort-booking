@@ -51,10 +51,13 @@ const AdminLogin = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <TreePine className="w-12 h-12 text-secondary-600" />
+            <div className="flex justify-center mb-4 mt-2">
+              <img 
+                src="/images/village-machaan-logo.png" 
+                alt="Village Machaan" 
+                className="h-24 w-auto"
+              />
             </div>
-            <h1 className="text-2xl font-serif font-bold text-primary-950">Village Machaan</h1>
             <p className="text-primary-700 mt-2">Admin Dashboard Login</p>
           </div>
 

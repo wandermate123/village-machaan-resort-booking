@@ -101,3 +101,4 @@ export const xssProtection = (req: any, res: any, next: any) => {
   req.params = sanitizeObject(req.params);
   next();
 };
+

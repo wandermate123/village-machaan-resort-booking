@@ -7,4 +7,84 @@
     font-family: 'Angleton', serif;
     background-color: #F3EEE7;
   }
+  
+  /* Override default blue selection color for select elements */
+  select {
+    accent-color: #3F3E3E !important;
+  }
+  
+  select:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px #3F3E3E !important;
+    border-color: #3F3E3E !important;
+  }
+  
+  select:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px #3F3E3E !important;
+  }
+  
+  select option {
+    background-color: white !important;
+    color: #3F3E3E !important;
+  }
+  
+  select option:checked {
+    background-color: #3F3E3E !important;
+    color: white !important;
+  }
+  
+  select option:hover {
+    background-color: #3F3E3E !important;
+    color: white !important;
+  }
+  
+  select option:focus {
+    background-color: #3F3E3E !important;
+    color: white !important;
+  }
+  
+  select option:selected {
+    background-color: #3F3E3E !important;
+    color: white !important;
+  }
+  
+  /* Override Tailwind's blue focus colors */
+  .focus\:ring-blue-500:focus {
+    --tw-ring-color: #3F3E3E !important;
+  }
+  
+  .focus\:border-blue-500:focus {
+    --tw-border-color: #3F3E3E !important;
+  }
+  
+  /* Override all blue colors in form elements */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-color: #3F3E3E !important;
+    --tw-border-color: #3F3E3E !important;
+    border-color: #3F3E3E !important;
+    box-shadow: 0 0 0 2px #3F3E3E !important;
+  }
+  
+  /* Override any remaining blue text colors */
+  .text-blue-600 {
+    color: #3F3E3E !important;
+  }
+  
+  /* Override blue background colors */
+  .bg-blue-600 {
+    background-color: #3F3E3E !important;
+  }
+  
+  .hover\:bg-blue-700:hover {
+    background-color: #2A2929 !important;
+  }
+  
+  /* Override default blue focus color for buttons */
+  button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #3F3E3E;
+  }
 }

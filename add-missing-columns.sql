@@ -41,3 +41,5 @@ BEGIN
     RAISE NOTICE 'Error: Columns were not added successfully';
   END IF;
 END $$;
+
+

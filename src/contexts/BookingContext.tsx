@@ -108,14 +108,31 @@ function bookingReducer(state: BookingState, action: BookingAction): BookingStat
     case 'SET_GUEST_DETAILS':
       return { ...state, guestDetails: action.payload };
     case 'CALCULATE_TOTAL':
-      const villaTotal = state.selectedVilla ? calculateNights(state.checkIn, state.checkOut) * state.selectedVilla.price : 0;
-      // Package price is per night, so multiply by number of nights
-      const packageTotal = state.selectedPackage ? 
-        state.selectedPackage.price * calculateNights(state.checkIn, state.checkOut) : 0;
+      const nights = calculateNights(state.checkIn, state.checkOut);
+      const guests = state.guests || 0;
+      
+      // Calculate villa total with dynamic pricing
+      let villaTotal = 0;
+      if (state.selectedVilla) {
+        const baseVillaPrice = state.selectedVilla.base_price * nights;
+        const extraGuests = Math.max(0, guests - 2);
+        const extraGuestCharge = 2000; // ₹2000 per extra person per night
+        const extraGuestTotal = extraGuests * extraGuestCharge * nights;
+        villaTotal = baseVillaPrice + extraGuestTotal;
+      }
+      
+      // Calculate package total with dynamic pricing
+      let packageTotal = 0;
+      if (state.selectedPackage) {
+        const basePackagePrice = state.selectedPackage.price * nights;
+        const extraGuests = Math.max(0, guests - 2);
+        const extraGuestCharge = 500; // ₹500 per extra person per night for breakfast
+        const extraGuestTotal = extraGuests * extraGuestCharge * nights;
+        packageTotal = basePackagePrice + extraGuestTotal;
+      }
+      
       const safariTotal = state.selectedSafaris.reduce((sum, safari) => sum + safari.price, 0);
-      // Villa total now includes the package pricing per night
-      const adjustedVillaTotal = villaTotal + packageTotal;
-      return { ...state, totalAmount: adjustedVillaTotal + safariTotal };
+      return { ...state, totalAmount: villaTotal + packageTotal + safariTotal };
     case 'RESET_BOOKING':
       return { ...initialState, sessionId: generateSessionId() };
     case 'RESTORE_SESSION':

@@ -50,8 +50,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, setIsOpen }) => {
       `}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-primary-800">
           <div className="flex items-center space-x-2">
-            <TreePine className="w-8 h-8 text-secondary-600" />
-            <span className="text-lg font-serif font-bold">Admin Panel</span>
+            <img 
+              src="/images/village-machaan-logo.png" 
+              alt="Village Machaan" 
+              className="h-16 w-auto mt-1"
+            />
+            <span className="text-lg font-serif font-bold text-white">Admin Panel</span>
           </div>
           <button
             onClick={() => setIsOpen(false)}

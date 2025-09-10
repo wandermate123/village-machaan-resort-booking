@@ -247,7 +247,11 @@ const BookingSummary = () => {
         }}
       >
         <div className="flex items-center justify-between h-full px-6">
-          <h1 className="text-2xl font-light text-gray-800">Village Machaan</h1>
+          <img 
+            src="/images/village-machaan-logo.png" 
+            alt="Village Machaan" 
+            className="h-16 w-auto mt-1"
+          />
           <div className="flex items-center space-x-4">
             <select className="text-sm border-none bg-transparent">
               <option>English</option>
@@ -275,34 +279,174 @@ const BookingSummary = () => {
       {/* Progress Steps */}
       <div className="border-b border-gray-200 px-6 py-8" style={{ backgroundColor: '#F3EEE7' }}>
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-center text-xl text-gray-800 mb-8">Confirm Your Stay</h2>
+          <h2 className="text-center text-gray-800 mb-8" style={{ fontSize: '18px', fontWeight: '400' }}>Confirm Your Stay</h2>
           
-          <div className="flex items-center justify-center space-x-8">
+          <div className="flex items-center justify-center space-x-8 relative">
             {[
               { step: 1, label: 'Date & Accommodation Selection', active: false, completed: true },
               { step: 2, label: 'Package Selection', active: false, completed: true },
               { step: 3, label: 'Safari Selection', active: false, completed: true },
               { step: 4, label: 'Confirmation', active: true, completed: false }
             ].map((item, index) => (
-              <div key={item.step} className="flex items-center">
-                <div className="flex flex-col items-center">
-                   <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm ${
-                     item.completed ? 'border-black bg-white text-black' :
-                     item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
-                   }`}>
-                    {item.completed ? (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      item.step
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-600 mt-2 text-center max-w-32 font-serif leading-tight whitespace-nowrap">{item.label}</span>
+              <div key={item.step} className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
+                   item.completed ? 'border-black bg-white text-black' :
+                   item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
+                 }`}>
+                  {item.completed ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <span className="text-base font-medium" style={{ fontSize: '16px' }}>{item.step}</span>
+                  )}
                 </div>
-                {index < 3 && <div className="w-16 h-px bg-gray-300 mx-4 mt-[-20px]"></div>}
+                <span 
+                  className="text-xs text-gray-600 mt-2 text-center font-serif leading-tight"
+                  style={{ 
+                    whiteSpace: 'nowrap',
+                    width: '120px'
+                  }}
+                >
+                  {item.label}
+                </span>
               </div>
             ))}
+            {/* Connecting Lines */}
+            <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-3/4 h-px bg-gray-300 -z-10"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Modal - Exact Vue.js Design */}
+      <div className="flex justify-center py-4">
+        <div 
+          className="relative"
+          style={{
+            width: '618px',
+            height: '48px'
+          }}
+        >
+          {/* Date Summary Section */}
+          <div 
+            className="absolute"
+            style={{
+              width: '568px',
+              height: '48px',
+              top: '0',
+              left: '50%',
+              backgroundColor: '#ffffff',
+              border: '0.2px solid #8b8881',
+              transform: 'translate(-45.6%, 0)',
+              zIndex: 5
+            }}
+          >
+            {/* Night Count Text */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: '120px',
+                height: '19px',
+                top: '8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                color: '#403b34',
+                fontFamily: 'TAN - Angleton, sans-serif',
+                fontSize: '12px',
+                fontWeight: '400',
+                lineHeight: '19px',
+                whiteSpace: 'nowrap',
+                zIndex: 8
+              }}
+            >
+              {state.checkIn && state.checkOut ? 
+                `${Math.ceil((new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) / (1000 * 60 * 60 * 24))} Night${Math.ceil((new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) / (1000 * 60 * 60 * 24)) > 1 ? 's' : ''}` : 
+                'Select Dates'
+              }
+            </div>
+            
+            {/* Date Details */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: '520px',
+                height: '11px',
+                top: '28px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                color: '#4f4f4f',
+                fontFamily: 'Quicksand, sans-serif',
+                fontSize: '10px',
+                fontWeight: '400',
+                lineHeight: '11px',
+                whiteSpace: 'nowrap',
+                zIndex: 7
+              }}
+            >
+              {state.checkIn && state.checkOut ? 
+                `Arrival : ${new Date(state.checkIn).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })} | Departure: ${new Date(state.checkOut).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}` : 
+                'Please select your arrival and departure dates'
+              }
+            </div>
+          </div>
+          
+          {/* Edit Button Section */}
+          <div 
+            className="absolute cursor-pointer"
+            style={{
+              width: '50px',
+              height: '48px',
+              top: '0',
+              left: '0',
+              backgroundColor: '#f9f7f3',
+              border: '0.2px solid #8b8880',
+              zIndex: 1
+            }}
+            onClick={() => dispatch({ type: 'SET_STEP', payload: 1 })}
+          >
+            {/* Arrow Icon */}
+            <div 
+              className="absolute"
+              style={{
+                width: '15px',
+                height: '15px',
+                top: '14px',
+                left: '18px',
+                background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUiIGhlaWdodD0iMTUiIHZpZXdCb3g9IjAgMCAxNSAxNSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOS4zNzUgMTEuMjVMNC4xMjUgNkw5LjM3NSAwLjc1TDEwLjEyNSAxLjUyNUw1LjYyNSA2TDEwLjEyNSAxMC40NzVMOS4zNzUgMTEuMjVaIiBmaWxsPSIjNEY0RjRGIi8+PC9zdmc+) no-repeat center',
+                backgroundSize: 'cover',
+                zIndex: 2
+              }}
+            />
+            
+            {/* Edit Text */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: '37px',
+                height: '11px',
+                top: '29px',
+                left: '7px',
+                color: '#4f4f4f',
+                fontFamily: 'Quicksand, sans-serif',
+                fontSize: '10px',
+                fontWeight: '600',
+                lineHeight: '11px',
+                whiteSpace: 'nowrap',
+                zIndex: 3
+              }}
+            >
+              Edit
+            </div>
           </div>
         </div>
       </div>
@@ -427,7 +571,7 @@ const BookingSummary = () => {
                     className={`w-full p-3 border text-gray-800 text-sm placeholder-gray-500 rounded-lg transition-colors ${
                       validationErrors['First Name'] 
                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                        : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                        : 'border-gray-300'
                     }`}
                   />
                 </FormField>
@@ -441,7 +585,7 @@ const BookingSummary = () => {
                     className={`w-full p-3 border text-gray-800 text-sm placeholder-gray-500 rounded-lg transition-colors ${
                       validationErrors['Last Name'] 
                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                        : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                        : 'border-gray-300'
                     }`}
                   />
                 </FormField>
@@ -463,7 +607,7 @@ const BookingSummary = () => {
               
               <FormField label="Phone Number" required error={validationErrors.phone}>
                 <div className="flex">
-                  <select className="p-3 border border-gray-300 border-r-0 text-gray-600 text-sm rounded-l-lg">
+                  <select className="p-3 border border-gray-300 border-r-0 text-gray-600 text-sm rounded-l-lg" style={{ color: '#3F3E3E', accentColor: '#3F3E3E' }}>
                     <option>+91</option>
                     <option>+1</option>
                     <option>+44</option>
@@ -476,7 +620,7 @@ const BookingSummary = () => {
                     className={`flex-1 p-3 border text-gray-800 text-sm placeholder-gray-500 rounded-r-lg transition-colors ${
                       validationErrors.phone 
                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                        : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                        : 'border-gray-300'
                     }`}
                   />
                 </div>
@@ -488,7 +632,7 @@ const BookingSummary = () => {
                   value={state.guestDetails.specialRequests}
                   onChange={(e) => handleGuestDetailsChange('specialRequests', e.target.value)}
                   rows={3}
-                  className="w-full p-3 border border-gray-300 text-gray-800 text-sm placeholder-gray-500 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full p-3 border border-gray-300 text-gray-800 text-sm placeholder-gray-500 rounded-lg transition-colors"
                 />
               </FormField>
             </div>
@@ -500,7 +644,7 @@ const BookingSummary = () => {
                   type="checkbox" 
                   checked={marketingConsent}
                   onChange={(e) => setMarketingConsent(e.target.checked)}
-                  className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                  className="mt-1 rounded border-gray-300 text-gray-600" 
                 />
                 <span>
                   I consent to receiving email marketing from Village Machaan Resort, including discounts and special promotions, and 
@@ -513,7 +657,7 @@ const BookingSummary = () => {
                   type="checkbox" 
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                  className="mt-1 rounded border-gray-300 text-gray-600" 
                 />
                 <span>
                   I agree to the{' '}
