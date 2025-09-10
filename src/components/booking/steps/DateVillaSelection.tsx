@@ -393,6 +393,15 @@ const DateVillaSelection = () => {
         </div>
       </div>
 
+      {/* Navigation Border Line */}
+      <div 
+        className="mx-auto"
+        style={{
+          width: '1280px',
+          height: '1px',
+          backgroundColor: '#000000'
+        }}
+      />
 
        {/* Progress Steps - Exact Vue.js Design */}
        <div className="px-6 py-8" style={{ backgroundColor: '#F3EEE7' }}>
@@ -474,7 +483,6 @@ const DateVillaSelection = () => {
                      <ChevronRight className="w-5 h-5 text-gray-800" />
                    </button>
                  </div>
-                 <div className="w-full border-b border-black"></div>
                </div>
                
                {/* Calendar */}
