@@ -283,7 +283,7 @@ const BookingSummary = () => {
           
           <div className="flex items-center justify-center space-x-8 relative">
             {[
-              { step: 1, label: 'Date & Accommodation Selection', active: false, completed: true },
+              { step: 1, label: 'Dates & Accommodation', active: false, completed: true },
               { step: 2, label: 'Package Selection', active: false, completed: true },
               { step: 3, label: 'Safari Selection', active: false, completed: true },
               { step: 4, label: 'Confirmation', active: true, completed: false }

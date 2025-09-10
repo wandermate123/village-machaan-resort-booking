@@ -18,20 +18,9 @@ const BookingFlow = () => {
   }, [state]);
 
   useEffect(() => {
-    // Restore session on load
-    const savedSession = localStorage.getItem('booking_session');
-    if (savedSession) {
-      try {
-        const sessionData = JSON.parse(savedSession);
-        // Check if session is less than 24 hours old
-        if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
-          dispatch({ type: 'RESTORE_SESSION', payload: sessionData });
-        }
-      } catch (error) {
-        console.error('Failed to restore session:', error);
-      }
-    }
-  }, [dispatch]);
+    // Clear any existing session data to start fresh with blank dates
+    localStorage.removeItem('booking_session');
+  }, []);
 
   // Handle browser back/forward buttons
   useEffect(() => {

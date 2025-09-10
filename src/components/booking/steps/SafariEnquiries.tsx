@@ -23,6 +23,7 @@ const SafariEnquiries = () => {
   const [loading, setLoading] = useState(true);
   const [safariBookings, setSafariBookings] = useState<SafariBooking[]>([]);
   const [nextSafariId, setNextSafariId] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchSafariOptions();
@@ -67,45 +68,71 @@ const SafariEnquiries = () => {
     );
   };
 
-  const sendSafariEnquiry = async (safariId: string) => {
-    const booking = safariBookings.find(b => b.id === safariId);
-    if (!booking || !booking.date || !booking.timing) {
-      showError('Incomplete Details', 'Please fill in all required fields before sending enquiry');
+  const sendAllSafariEnquiries = async () => {
+    // Validate all safari bookings
+    const incompleteBookings = safariBookings.filter(booking => !booking.date || !booking.timing);
+    if (incompleteBookings.length > 0) {
+      showError('Incomplete Details', 'Please fill in all required fields for all safari bookings before submitting');
       return;
     }
 
+    if (safariBookings.length === 0) {
+      showError('No Safaris', 'Please add at least one safari before submitting');
+      return;
+    }
+
+    // Validate guest details are filled
+    if (!state.guestDetails.firstName || !state.guestDetails.lastName || !state.guestDetails.email) {
+      showError('Guest Details Required', 'Please fill in your guest details (name and email) before submitting safari enquiries');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
-      const queryData = {
-        booking_id: state.bookingId || `temp_${Date.now()}`,
+      // Prepare all enquiries for bulk submission
+      const enquiries = safariBookings.map((booking, index) => ({
         guest_name: `${state.guestDetails.firstName} ${state.guestDetails.lastName}`,
         email: state.guestDetails.email,
         phone: state.guestDetails.phone,
+        booking_id: state.bookingId || `temp_${Date.now()}`,
+        safari_name: `Jungle Safari ${index + 1}`,
         safari_option_id: booking.safariId || 'general',
-        safari_name: `Jungle Safari ${safariId.replace('safari', '')}`,
         preferred_date: booking.date,
         preferred_timing: booking.timing,
         number_of_persons: booking.persons,
         special_requirements: state.specialRequests || '',
         status: 'pending' as const
-      };
+      }));
 
-      const result = await SafariQueriesService.createSafariQuery(queryData);
+      // Debug logging
+      console.log('=== SAFARI ENQUIRY DEBUG ===');
+      console.log('Guest Details:', state.guestDetails);
+      console.log('Enquiries to submit:', enquiries);
+      console.log('============================');
+
+      // Send all enquiries using bulk API
+      const result = await SafariQueriesService.createBulkSafariQueries(enquiries);
       
       if (result.success) {
+        // Mark all as sent
         setSafariBookings(prev => 
-          prev.map(b => 
-            b.id === safariId 
-              ? { ...b, enquirySent: true }
-              : b
-          )
+          prev.map(booking => ({ ...booking, enquirySent: true }))
         );
-        showSuccess('Enquiry Sent', 'Safari enquiry has been submitted successfully');
+        showSuccess('All Enquiries Sent', `${result.count} safari enquiry(ies) have been submitted successfully`);
+        
+        // Force re-render by updating state
+        setTimeout(() => {
+          setSafariBookings(prev => [...prev]);
+        }, 100);
       } else {
-        showError('Submission Error', 'Failed to submit safari enquiry. Please try again.');
+        showError('Submission Error', result.error || 'Failed to submit safari enquiries. Please try again.');
       }
     } catch (error) {
-      console.error('Error sending safari enquiry:', error);
-      showError('Submission Error', 'Failed to submit safari enquiry. Please try again.');
+      console.error('Error sending safari enquiries:', error);
+      showError('Submission Error', 'Failed to submit safari enquiries. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -182,7 +209,24 @@ const SafariEnquiries = () => {
   };
 
   const hasEnquirySent = safariBookings.some(booking => booking.enquirySent);
-  const hasIncompleteEnquiries = safariBookings.some(booking => booking.selected && !booking.enquirySent);
+  const hasIncompleteEnquiries = safariBookings.some(booking => !booking.date || !booking.timing);
+  const allEnquiriesSent = safariBookings.length > 0 && safariBookings.every(booking => booking.enquirySent);
+  // Allow proceeding if no safari bookings OR all enquiries sent OR user explicitly wants to skip
+  const canProceed = safariBookings.length === 0 || allEnquiriesSent || (safariBookings.length > 0 && !hasIncompleteEnquiries);
+  
+  // Debug logging (can be removed in production)
+  console.log('=== SAFARI DEBUG INFO ===');
+  console.log('Safari Bookings:', safariBookings);
+  console.log('Has Enquiry Sent:', hasEnquirySent);
+  console.log('Has Incomplete Enquiries:', hasIncompleteEnquiries);
+  console.log('All Enquiries Sent:', allEnquiriesSent);
+  console.log('Can Proceed:', canProceed);
+  console.log('Button should show:', safariBookings.length > 0 && !safariBookings.every(booking => booking.enquirySent));
+  console.log('Button disabled:', safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting);
+  console.log('Safari bookings length:', safariBookings.length);
+  console.log('Every booking enquiry sent:', safariBookings.every(booking => booking.enquirySent));
+  console.log('Individual booking enquiry sent:', safariBookings.map(b => ({ id: b.id, enquirySent: b.enquirySent })));
+  console.log('========================');
 
   const dateOptions = generateDateOptions();
   const safariTotal = calculateSafariTotal();
@@ -235,7 +279,7 @@ const SafariEnquiries = () => {
           
           <div className="flex items-center justify-center space-x-8 relative">
             {[
-              { step: 1, label: 'Date & Accommodation Selection', active: false, completed: true },
+              { step: 1, label: 'Dates & Accommodation', active: false, completed: true },
               { step: 2, label: 'Package Selection', active: false, completed: true },
               { step: 3, label: 'Safari Selection', active: true, completed: false },
               { step: 4, label: 'Confirmation', active: false, completed: false }
@@ -409,11 +453,9 @@ const SafariEnquiries = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-2xl font-light text-gray-800 mb-2">Wildlife Safari Inquiries</h2>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-red-600 text-sm font-medium">
+            <p className="text-red-600 text-sm mb-4">
                 Safari requests are treated as inquiries only. Confirmation will be shared by our team with a payment link if dates are available, or alternate options if not.
               </p>
-            </div>
             <div className="flex items-center text-gray-600">
               <Info className="w-4 h-4 mr-2" />
               <span className="text-sm">Submit your wildlife safari preferences for our team to review</span>
@@ -456,184 +498,316 @@ const SafariEnquiries = () => {
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Responsive Container */}
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-max mx-auto">
             {safariBookings.map((booking, index) => (
-              <div key={booking.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  {/* Safari Image */}
-                  <div className="relative">
-                    <div className="relative w-full h-full overflow-hidden" style={{ minHeight: '400px' }}>
-                      <img
-                        src="/images/safari/tiger-safari.jpg"
-                        alt={`Jungle Safari ${index + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                        onError={(e) => {
-                          console.error(`Failed to load safari image: ${e.currentTarget.src}`);
-                          e.currentTarget.src = '/images/safari/tiger-safari.jpg';
-                        }}
-                      />
-                    </div>
+                  <div key={booking.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 mb-6" style={{ padding: 0, margin: 0 }}>
+                {/* Safari Box - Exact Design Match */}
+                <div className="flex mx-auto max-w-full overflow-hidden" style={{ width: '1062px', height: '415px', padding: 0, margin: 0 }}>
+                  {/* Left Image Section */}
+                  <div 
+                    className="relative flex-shrink-0"
+                    style={{
+                      width: '529px',
+                      height: '415px',
+                      background: 'url(/images/safari/tiger-safari.jpg) no-repeat 0 0',
+                      backgroundSize: 'cover',
+                      zIndex: 10,
+                      margin: 0,
+                      padding: 0
+                    }}
+                  >
+                    {/* Navigation Arrows */}
                     <button className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-colors">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-colors">
                       <ChevronRight className="w-4 h-4" />
                     </button>
-                    
-                    {/* Price Badge */}
-                    <div className="absolute top-3 right-3 bg-black/90 text-white px-2.5 py-1.5 rounded-lg backdrop-blur-sm">
-                      <div className="text-sm font-bold">INQUIRY</div>
-                      <div className="text-xs opacity-90">Only</div>
-                    </div>
                   </div>
 
-                  {/* Safari Details */}
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Jungle Safari {index + 1}</h3>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-3">
-                          Experience the thrill of wildlife safari with our expert guides.
-                        </p>
-                        
-                        <div className="flex items-center space-x-3 text-xs text-gray-500 mb-4">
-                          <div className="flex items-center">
-                            <Clock className="w-3.5 h-3.5 mr-1" />
-                            <span>3-4 hours</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="w-3.5 h-3.5 mr-1" />
-                            <span>Max 6 persons</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-1.5 ml-4">
-                        {booking.enquirySent && (
-                          <div className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-medium border border-emerald-200">
-                            Sent ✓
-                          </div>
-                        )}
-                        <button 
-                          onClick={() => removeSafariBox(booking.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
-                          title="Remove Safari"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                  {/* Right Content Section */}
+                  <div 
+                    className="relative bg-white flex-shrink-0 overflow-hidden"
+                    style={{
+                      width: '533px',
+                      height: '415px',
+                      padding: '27px 24px'
+                    }}
+                  >
+                    {/* Title */}
+                    <h3 
+                      className="text-gray-800 font-normal absolute"
+                      style={{
+                        fontFamily: 'TAN - Angleton, sans-serif',
+                        fontSize: '15px',
+                        fontWeight: '400',
+                        lineHeight: '28.845px',
+                        top: '27px',
+                        left: '20px',
+                        zIndex: 1
+                      }}
+                    >
+                      Jungle Safari {index + 1}
+                    </h3>
 
-                    {/* Safari Details Form */}
-                    <div className="border-t border-gray-100 pt-4">
-                      <h4 className="text-sm font-semibold text-gray-800 mb-3">Safari Details</h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                            <Calendar className="w-3.5 h-3.5 inline mr-1" />
-                            Select Date
-                          </label>
+                    {/* Description */}
+                    <p 
+                      className="text-black absolute"
+                      style={{
+                        fontFamily: 'Quicksand, sans-serif',
+                        fontSize: '10px',
+                        fontWeight: '400',
+                        lineHeight: '12.5px',
+                        width: '334px',
+                        height: '39px',
+                        top: '62px',
+                        left: '20px',
+                        zIndex: 3
+                      }}
+                    >
+                      The magic begins with the first light of day — mist rolling through the trees, peacocks calling from afar, and the forest slowly awakening. A morning safari is a window into Pench's most enchanting hour.
+                    </p>
+
+
+                    {/* Note */}
+                    <p 
+                      className="text-black absolute"
+                      style={{
+                        fontFamily: 'Quicksand, sans-serif',
+                        fontSize: '7px',
+                        fontWeight: '400',
+                        lineHeight: '8.75px',
+                        width: '229px',
+                        height: '18px',
+                        top: '134px',
+                        right: '10px',
+                        zIndex: 4
+                      }}
+                    >
+                      Note: Payment and Safari Confirmation will happen later in our follow ups as possibility depends on many factors such as the weather.
+                    </p>
+
+                    {/* Tell us in more detail */}
+                    <h4 
+                      className="text-gray-800 font-normal absolute"
+                      style={{
+                        fontFamily: 'TAN - Angleton, sans-serif',
+                        fontSize: '12px',
+                        fontWeight: '400',
+                        lineHeight: '23px',
+                        top: '196px',
+                        left: '20px',
+                        zIndex: 2
+                      }}
+                    >
+                      Tell us in more detail
+                    </h4>
+
+                    {/* Date Input */}
+                    <div 
+                      className="absolute"
+                      style={{
+                        width: '396px',
+                        height: '46px',
+                        top: '237px',
+                        left: '20px',
+                        zIndex: 11
+                      }}
+                    >
+                      <div 
+                        className="relative bg-white border w-full h-full"
+                        style={{
+                          border: '0.5px solid #3f3e3e'
+                        }}
+                      >
                           <select 
                             value={booking.date}
                             onChange={(e) => handleSafariBookingChange(booking.id, 'date', e.target.value)}
-                            className={`w-full p-2.5 border rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                              !booking.date ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                            required
+                          className="w-full h-full px-4 text-gray-700 focus:outline-none appearance-none bg-transparent"
+                          style={{
+                            fontFamily: 'Quicksand, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                            lineHeight: '10px'
+                          }}
                             disabled={booking.enquirySent}
                           >
-                            <option value="">Choose Date</option>
+                          <option value="">Select Date</option>
                             {dateOptions.map((date) => (
                               <option key={date.value} value={date.value}>
                                 {date.label}
                               </option>
                             ))}
                           </select>
-                          {!booking.date && (
-                            <p className="text-red-500 text-xs mt-1">Date is required</p>
-                          )}
+                        <div 
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                          style={{
+                            width: '9px',
+                            height: '5px',
+                            background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOSIgaGVpZ2h0PSI1IiB2aWV3Qm94PSIwIDAgOSA1IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik00LjUgNEwwIDBIOUw0LjUgNFoiIGZpbGw9IiM0RjRGN0YiLz48L3N2Zz4=) no-repeat center',
+                            backgroundSize: 'cover'
+                          }}
+                        />
+                      </div>
                         </div>
                         
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                            <Clock className="w-3.5 h-3.5 inline mr-1" />
-                            Select Timing
-                          </label>
+                    {/* Time Input */}
+                    <div 
+                      className="absolute"
+                      style={{
+                        width: '396px',
+                        height: '46px',
+                        top: '291px',
+                        left: '20px',
+                        zIndex: 15
+                      }}
+                    >
+                      <div 
+                        className="relative bg-white border w-full h-full"
+                        style={{
+                          border: '0.5px solid #3f3e3e'
+                        }}
+                      >
                           <select 
                             value={booking.timing}
                             onChange={(e) => handleSafariBookingChange(booking.id, 'timing', e.target.value)}
-                            className={`w-full p-2.5 border rounded-lg text-gray-700 text-sm focus:ring-2 transition-colors ${
-                              !booking.timing ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                          className="w-full h-full px-4 text-gray-700 focus:outline-none appearance-none bg-transparent"
                             style={{ 
-                              color: '#3F3E3E',
-                              accentColor: '#3F3E3E'
-                            }}
-                            required
+                            fontFamily: 'Quicksand, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                            lineHeight: '10px'
+                          }}
                             disabled={booking.enquirySent}
                           >
-                            <option value="">Choose Timing</option>
-                            <option value="morning">Morning (6:00 AM - 10:00 AM)</option>
-                            <option value="afternoon">Afternoon (2:00 PM - 6:00 PM)</option>
-                            <option value="evening">Evening (4:00 PM - 8:00 PM)</option>
+                          <option value="">Select Time</option>
+                          <option value="morning">Morning</option>
+                          <option value="afternoon">Afternoon</option>
+                          <option value="evening">Evening</option>
                           </select>
-                          {!booking.timing && (
-                            <p className="text-red-500 text-xs mt-1">Timing is required</p>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                            <Users className="w-3.5 h-3.5 inline mr-1" />
-                            Persons
-                          </label>
-                          <select 
-                            value={booking.persons}
-                            onChange={(e) => handleSafariBookingChange(booking.id, 'persons', parseInt(e.target.value))}
-                            className="w-full p-2.5 border border-gray-200 rounded-lg text-gray-700 text-sm focus:ring-2 transition-colors hover:border-gray-300"
-                            disabled={booking.enquirySent}
-                          >
-                            {Array.from({ length: 6 }, (_, i) => i + 1).map(num => (
-                              <option key={num} value={num}>
-                                {num} Person{num > 1 ? 's' : ''}
-                              </option>
-                            ))}
-                          </select>
+                        <div 
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                          style={{
+                            width: '9px',
+                            height: '5px',
+                            background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOSIgaGVpZ2h0PSI1IiB2aWV3Qm94PSIwIDAgOSA1IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik00LjUgNEwwIDBIOUw0LjUgNFoiIGZpbGw9IiM0RjRGN0YiLz48L3N2Zz4=) no-repeat center',
+                            backgroundSize: 'cover'
+                          }}
+                        />
+                        <span 
+                          className="absolute right-16 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                          style={{
+                            fontFamily: 'Quicksand, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                            lineHeight: '12.5px'
+                          }}
+                        >
+                          (Morning, Afternoon, Night)
+                        </span>
                         </div>
                       </div>
 
-                      {/* Price and Action Section */}
-                      <div className="flex justify-between items-center bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="text-gray-600 text-sm font-medium">Price:</div>
-                          <div className="text-gray-900 text-lg font-bold">INQUIRY</div>
-                          <div className="text-gray-500 text-xs">Free inquiry</div>
-                        </div>
+                    {/* Time Note */}
+                    <p 
+                      className="text-black absolute"
+                      style={{
+                        fontFamily: 'Quicksand, sans-serif',
+                        fontSize: '6px',
+                        fontWeight: '400',
+                        lineHeight: '7.492px',
+                        width: '98px',
+                        height: '49px',
+                        top: '289px',
+                        right: '10px',
+                        zIndex: 5
+                      }}
+                    >
+                      Note: The morning safari offers the best chance to spot tigers and other wildlife, as animals are most active at dawn. Guests can also experience cooler temperatures and excellent birdwatching opportunities.
+                    </p>
                         
-                        {!booking.enquirySent ? (
+                    {/* Persons Input */}
+                    <div 
+                      className="absolute"
+                      style={{
+                        width: '396px',
+                        height: '46px',
+                        top: '345px',
+                        left: '20px',
+                        zIndex: 20
+                      }}
+                    >
+                      <div 
+                        className="relative bg-white border flex items-center w-full h-full"
+                        style={{
+                          border: '0.5px solid #3f3e3e'
+                        }}
+                      >
+                        <span 
+                          className="px-4 text-gray-700"
+                          style={{
+                            fontFamily: 'Quicksand, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                            lineHeight: '10px'
+                          }}
+                        >
+                          {booking.persons} Persons
+                        </span>
+                        <span 
+                          className="text-gray-400"
+                          style={{
+                            fontFamily: 'Quicksand, sans-serif',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                            lineHeight: '12.5px'
+                          }}
+                        >
+                          (6 people per Jeep)
+                        </span>
                           <button 
-                            onClick={() => sendSafariEnquiry(booking.id)}
-                            disabled={!booking.date || !booking.timing}
-                            className={`px-6 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${
-                              booking.date && booking.timing
-                                ? 'bg-gray-900 hover:bg-gray-800 text-white shadow-sm hover:shadow-md' 
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            SEND ENQUIRY
+                          onClick={() => handleSafariBookingChange(booking.id, 'persons', Math.min(6, booking.persons + 1))}
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                          disabled={booking.enquirySent || booking.persons >= 6}
+                        >
+                          <Plus className="w-3 h-3 text-gray-600" />
                           </button>
-                        ) : (
-                          <div className="text-emerald-600 font-medium text-sm flex items-center">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
-                            Enquiry sent
-                          </div>
-                        )}
                       </div>
                     </div>
+
+                    {/* Enquiry Status Indicator */}
+                    {booking.enquirySent && (
+                      <div 
+                        className="absolute top-4 right-4 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium"
+                        style={{
+                          top: '20px',
+                          right: '10px'
+                        }}
+                      >
+                        ✓ Sent
+                      </div>
+                    )}
+
+                    {/* Remove Button */}
+                    <button 
+                      onClick={() => removeSafariBox(booking.id)}
+                      className="absolute top-4 right-16 p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
+                      style={{
+                        top: '20px',
+                        right: '60px'
+                      }}
+                      title="Remove Safari"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -641,11 +815,9 @@ const SafariEnquiries = () => {
         {safariBookings.some(booking => booking.enquirySent) && (
           <div className="mt-8 bg-white border border-gray-200 p-6 rounded-lg">
             <h3 className="text-lg font-medium text-gray-800 mb-4">Wildlife Safari Inquiries Summary</h3>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-              <p className="text-red-600 text-sm font-medium">
+            <p className="text-red-600 text-sm mb-4">
                 Safari requests are treated as inquiries only. Confirmation will be shared by our team with a payment link if dates are available, or alternate options if not.
               </p>
-            </div>
             <div className="space-y-2">
               {safariBookings.map((booking, index) => {
                 if (!booking.enquirySent) return null;
@@ -668,6 +840,36 @@ const SafariEnquiries = () => {
           </div>
         )}
 
+        {/* Helpful Message for Safari Bookings */}
+        {safariBookings.length > 0 && !allEnquiriesSent && (
+          <div className={`border rounded-lg p-4 mb-6 ${
+            hasIncompleteEnquiries 
+              ? 'bg-yellow-50 border-yellow-200' 
+              : 'bg-blue-50 border-blue-200'
+          }`}>
+            <div className="flex items-start">
+              <Info className={`w-5 h-5 mt-0.5 mr-3 flex-shrink-0 ${
+                hasIncompleteEnquiries ? 'text-yellow-600' : 'text-blue-600'
+              }`} />
+              <div>
+                <h4 className={`font-medium mb-1 ${
+                  hasIncompleteEnquiries ? 'text-yellow-800' : 'text-blue-800'
+                }`}>
+                  {hasIncompleteEnquiries ? 'Complete Your Safari Details' : 'Submit Your Safari Enquiries'}
+                </h4>
+                <p className={`text-sm ${
+                  hasIncompleteEnquiries ? 'text-yellow-700' : 'text-blue-700'
+                }`}>
+                  {hasIncompleteEnquiries 
+                    ? 'Please select a date and time for each safari booking before submitting.'
+                    : 'Your safari details are complete! Click "Complete Safari Enquiries" to submit them, or use "Continue Without Safari" to skip.'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex justify-between items-center mt-12 pt-8">
           <button
@@ -678,23 +880,65 @@ const SafariEnquiries = () => {
             <span>Back to Package Selection</span>
           </button>
           
-          <button
-            onClick={handleNext}
-            disabled={hasIncompleteEnquiries}
-            className={`flex items-center space-x-2 px-8 py-3 rounded text-sm font-medium transition-colors ${
-              hasIncompleteEnquiries
-                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
-          >
-            <span>
-              {hasIncompleteEnquiries 
-                ? 'Complete Safari Enquiries' 
-                : 'Continue to Confirmation'
-              }
-            </span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex gap-3">
+            {/* Safari Enquiry Button - Always show if there are safari bookings */}
+            {safariBookings.length > 0 && (
+              <button
+                onClick={() => {
+                  console.log('=== SAFARI BUTTON CLICKED ===');
+                  console.log('Safari bookings:', safariBookings);
+                  sendAllSafariEnquiries();
+                }}
+                disabled={safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting}
+                className={`flex items-center space-x-2 px-6 py-3 rounded text-sm font-medium transition-colors ${
+                  safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Complete Safari Enquiries</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
+          
+            {/* Continue Button */}
+            <button
+              onClick={() => {
+                console.log('=== CONTINUE BUTTON CLICKED ===');
+                console.log('Can proceed:', canProceed);
+                if (canProceed) {
+                  handleNext();
+                } else {
+                  console.log('Cannot proceed - safari enquiries not completed');
+                }
+              }}
+              disabled={!canProceed}
+              className={`flex items-center space-x-2 px-8 py-3 rounded text-sm font-medium transition-colors ${
+                !canProceed
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
+            >
+              <span>
+                {!canProceed
+                  ? 'Complete Safari Details First' 
+                  : safariBookings.length > 0 && !allEnquiriesSent
+                    ? 'Continue Without Submitting Safari'
+                    : 'Continue to Confirmation'
+                }
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Contact Info */}

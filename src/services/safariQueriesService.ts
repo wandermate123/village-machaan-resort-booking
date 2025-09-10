@@ -1,5 +1,9 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ErrorHandler } from '../utils/errorHandler';
+import type { Database } from '../lib/supabase';
+
+type SafariQueryRow = Database['public']['Tables']['safari_queries']['Row'];
+type SafariQueryInsert = Database['public']['Tables']['safari_queries']['Insert'];
 
 export interface SafariQuery {
   id: string;
@@ -131,6 +135,56 @@ export class SafariQueriesService {
       console.error('Error creating safari query:', error);
       const appError = ErrorHandler.handleSupabaseError(error);
       return { success: false, error: appError.message };
+    }
+  }
+
+  // Create bulk safari queries using Supabase
+  static async createBulkSafariQueries(enquiries: Omit<SafariQuery, 'id' | 'created_at' | 'updated_at'>[]): Promise<{ success: boolean; count?: number; error?: string }> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        throw new Error('Supabase is not configured');
+      }
+
+      // Convert enquiries to Supabase format
+      const supabaseEnquiries: SafariQueryInsert[] = enquiries.map(enquiry => ({
+        booking_id: enquiry.booking_id || null,
+        guest_name: enquiry.guest_name,
+        email: enquiry.email,
+        phone: enquiry.phone || null,
+        safari_option_id: enquiry.safari_option_id || null,
+        safari_name: enquiry.safari_name,
+        preferred_date: enquiry.preferred_date || null,
+        preferred_timing: enquiry.preferred_timing || null,
+        number_of_persons: enquiry.number_of_persons,
+        special_requirements: enquiry.special_requirements || null,
+        status: enquiry.status || 'pending',
+        admin_notes: enquiry.admin_notes || null,
+        response: enquiry.response || null,
+        responded_at: enquiry.responded_at || null,
+        responded_by: enquiry.responded_by || null
+      }));
+
+      // Insert all enquiries in a single batch
+      const { data, error } = await supabase
+        .from('safari_queries')
+        .insert(supabaseEnquiries)
+        .select();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log(`✅ ${data?.length || enquiries.length} safari enquiries created successfully`);
+      return { 
+        success: true, 
+        count: data?.length || enquiries.length 
+      };
+    } catch (error) {
+      console.error('Error creating bulk safari queries:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to create safari queries'
+      };
     }
   }
 

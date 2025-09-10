@@ -2,9 +2,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
-const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
+const JWT_SECRET = import.meta.env.VITE_JWT_SECRET || 'your-super-secret-jwt-key';
+const JWT_EXPIRES_IN = import.meta.env.VITE_JWT_EXPIRES_IN || '24h';
+const BCRYPT_ROUNDS = parseInt(import.meta.env.VITE_BCRYPT_ROUNDS || '12');
 
 export interface JWTPayload {
   userId: string;

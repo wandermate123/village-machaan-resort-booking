@@ -14,8 +14,8 @@ const DateVillaSelection = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedDates, setSelectedDates] = useState({ 
-    arrival: state.checkIn || '', 
-    departure: state.checkOut || '' 
+    arrival: '', 
+    departure: '' 
   });
   const [rooms, setRooms] = useState<number | null>(1);
   const [adults, setAdults] = useState<number | null>(state.guests || 2);
@@ -27,9 +27,11 @@ const DateVillaSelection = () => {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availabilityStatus, setAvailabilityStatus] = useState(null); // 'available', 'not-available', or null
 
-  // Load all villas on component mount
+  // Load all villas on component mount and clear any cached dates
   useEffect(() => {
     loadAllVillas();
+    // Clear any cached session data to ensure fresh start
+    localStorage.removeItem('booking_session');
   }, []);
 
   // Update selected villa details when selection changes
@@ -180,89 +182,97 @@ const DateVillaSelection = () => {
     const days = generateCalendar(currentMonth, currentYear);
     const today = new Date().toISOString().split('T')[0];
     
-    // Define images for each month
+    // Define images for each month - 12 different photos
     const monthImages = {
-      0: '/images/safari/tiger-safari.jpg', // January - Tiger
-      1: '/images/safari/tiger-safari.jpg', // February - Tiger
-      2: '/images/safari/tiger-safari.jpg', // March - Tiger
-      3: '/images/safari/tiger-safari.jpg', // April - Tiger
-      4: '/images/safari/tiger-safari.jpg', // May - Tiger
-      5: '/images/safari/tiger-safari.jpg', // June - Tiger
-      6: '/images/safari/tiger-safari.jpg', // July - Tiger
-      7: '/images/safari/tiger-safari.jpg', // August - Tiger
-      8: '/images/safari/tiger-safari.jpg', // September - Tiger
-      9: '/images/safari/tiger-safari.jpg', // October - Black Panther
-      10: '/images/safari/tiger-safari.jpg', // November - Tree
-      11: '/images/safari/tiger-safari.jpg'  // December - Tiger
+      0: '/images/calendar-months/january.png', // January
+      1: '/images/calendar-months/february.png', // February
+      2: '/images/calendar-months/march.png', // March
+      3: '/images/calendar-months/april.png', // April
+      4: '/images/calendar-months/may.png', // May
+      5: '/images/calendar-months/june.png', // June
+      6: '/images/calendar-months/july.png', // July
+      7: '/images/calendar-months/august.png', // August
+      8: '/images/calendar-months/september.png', // September
+      9: '/images/calendar-months/october.png', // October
+      10: '/images/calendar-months/november.png', // November
+      11: '/images/calendar-months/december.png' // December
     };
     
     return (
-      <div 
-        className="relative bg-white flex-shrink-0"
-        style={{
-          width: '200px',
-          height: '300px',
-          border: '0.5px solid #3F3E3E',
-          boxSizing: 'border-box'
-        }}
-      >
-        {/* Tree Image - positioned exactly as specified */}
-        <div 
-          className="absolute"
+        <div
+          className="relative bg-white flex-shrink-0"
           style={{
-            width: '90px',
-            height: '100px',
-            left: '45px',
-            top: '10px',
-            transform: 'rotate(-90deg)',
+            width: '280px',
+            height: '380px',
+            border: '0.5px solid #3F3E3E',
+            borderRight: monthOffset === 2 ? '0.5px solid #3F3E3E' : 'none',
+            borderLeft: monthOffset === 0 ? '0.5px solid #3F3E3E' : 'none',
+            boxSizing: 'border-box'
+          }}
+        >
+        {/* Month Image */}
+        <div 
+          className="absolute flex items-center justify-center"
+          style={{
+            width: '120px',
+            height: '130px',
+            left: 'calc(50% - 120px/2)',
+            top: '15px',
             backgroundImage: `url(${monthImages[currentMonth]})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
+            backgroundSize: 'contain',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         />
         
-        {/* Month Name - positioned to avoid image overlap */}
+        {/* Month Name */}
         <div 
-          className="absolute"
+          className="absolute flex items-center justify-center"
           style={{
-            width: '120px',
-            height: '28px',
-            left: 'calc(50% - 120px/2)',
-            top: '110px',
+            width: '160px',
+            height: '35px',
+            left: 'calc(50% - 160px/2)',
+            top: '150px',
             fontFamily: 'Rethink Sans, sans-serif',
             fontStyle: 'normal',
             fontWeight: 700,
-            fontSize: '20px',
-            lineHeight: '28px',
+            fontSize: '24px',
+            lineHeight: '35px',
             textAlign: 'center',
             letterSpacing: '0.01em',
-            color: '#3F3E3E'
+            color: '#3F3E3E',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           {months[currentMonth].toLowerCase()}
         </div>
         
-        {/* Calendar Grid Container - positioned to accommodate month name */}
+        {/* Calendar Grid Container */}
         <div 
           className="absolute"
           style={{
-            width: '180px',
-            height: '140px',
-            left: 'calc(50% - 180px/2)',
-            top: '140px'
+            width: '260px',
+            height: '240px',
+            left: 'calc(50% - 260px/2)',
+            top: '200px'
           }}
         >
           {/* Days of Week Headers */}
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => {
             const positions = [
-              { left: '5px', width: '20px' },   // S
-              { left: '30px', width: '20px' },  // M
-              { left: '55px', width: '20px' },  // T
-              { left: '80px', width: '20px' },  // W
-              { left: '105px', width: '20px' },  // T
-              { left: '130px', width: '20px' }, // F
-              { left: '155px', width: '20px' }  // S
+              { left: '15px', width: '32px' },   // S
+              { left: '52px', width: '32px' },   // M
+              { left: '89px', width: '32px' },   // T
+              { left: '126px', width: '32px' },  // W
+              { left: '163px', width: '32px' },  // T
+              { left: '200px', width: '32px' },  // F
+              { left: '237px', width: '32px' }   // S
             ];
             
             return (
@@ -271,13 +281,13 @@ const DateVillaSelection = () => {
                 className="absolute"
                 style={{
                   ...positions[index],
-                  height: '21px',
+                  height: '25px',
                   top: '0px',
                   fontFamily: 'Rethink Sans, sans-serif',
                   fontStyle: 'normal',
                   fontWeight: 700,
-                  fontSize: '14px',
-                  lineHeight: '18px',
+                  fontSize: '16px',
+                  lineHeight: '25px',
                   textAlign: 'center',
                   letterSpacing: '0.01em',
                   color: '#3F3E3E'
@@ -296,15 +306,15 @@ const DateVillaSelection = () => {
             const row = Math.floor(index / 7);
             const col = index % 7;
             
-            // Calculate exact positioning based on the CSS specifications
-            const leftPositions = [5, 30, 55, 80, 105, 130, 155];
-            const topPositions = [20, 35, 50, 65, 80, 95, 110];
+            // Calculate grid positioning
+            const leftPositions = [15, 52, 89, 126, 163, 200, 237];
+            const topPositions = [35, 60, 85, 110, 135, 160, 185];
             
             const left = leftPositions[col];
-            const top = topPositions[row] || 80;
+            const top = topPositions[row] || 135;
             
             // Calculate width based on number of digits
-            const width = '20px';
+            const width = '32px';
             
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isSelected = dateStr === selectedDates.arrival || dateStr === selectedDates.departure;
@@ -323,12 +333,12 @@ const DateVillaSelection = () => {
                   left: `${left}px`,
                   top: `${top}px`,
                   width: width,
-                  height: '15px',
+                  height: '25px',
                   fontFamily: 'Quicksand, sans-serif',
                   fontStyle: 'normal',
                   fontWeight: 400,
-                  fontSize: '10px',
-                  lineHeight: '15px',
+                  fontSize: '14px',
+                  lineHeight: '25px',
                   textAlign: 'center',
                   letterSpacing: '0.01em',
                   color: isPast ? '#CCCCCC' : isSelected ? '#FFFFFF' : '#3F3E3E',
@@ -337,7 +347,8 @@ const DateVillaSelection = () => {
                   cursor: isPast ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  borderRadius: '3px'
                 }}
               >
                 {day}
@@ -412,48 +423,40 @@ const DateVillaSelection = () => {
              Select your dates at Village Machaan
            </div>
            
-           {/* Progress Circles and Labels */}
-           <div className="flex items-center justify-center space-x-48">
-             {[1, 2, 3, 4].map((step, index) => (
-               <div key={step} className="flex flex-col items-center">
-                 {/* Circle */}
-                 <div 
-                   className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
-                   style={{
-                     backgroundColor: step === 1 ? '#ffffff' : '#f3eee7',
-                     borderColor: step === 1 ? '#403b34' : '#d1d5db'
-                   }}
-                 >
-                   <span 
-                     className="text-sm font-normal"
-                     style={{ 
-                       fontFamily: 'TAN - AEGEAN, sans-serif',
-                       color: step === 1 ? '#403b34' : '#9ca3af',
-                       fontSize: '14px'
-                     }}
-                   >
-                     {step}
-                   </span>
+           {/* Progress Steps */}
+           <div className="flex items-center justify-center space-x-8 relative">
+             {[
+               { step: 1, label: 'Date Selection', active: true, completed: false },
+               { step: 2, label: 'Package Selection', active: false, completed: false },
+               { step: 3, label: 'Safari Selection', active: false, completed: false },
+               { step: 4, label: 'Confirmation', active: false, completed: false }
+             ].map((item, index) => (
+               <div key={item.step} className="flex flex-col items-center">
+                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
+                    item.completed ? 'border-black bg-white text-black' :
+                    item.active ? 'border-black bg-white text-black' : 'border-gray-300 bg-white text-gray-400'
+                  }`}>
+                   {item.completed ? (
+                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                     </svg>
+                   ) : (
+                     <span className="text-base font-medium" style={{ fontSize: '16px' }}>{item.step}</span>
+                   )}
                  </div>
-                 
-                 {/* Label */}
                  <span 
-                   className="text-xs text-gray-600 text-center mt-2"
+                   className="text-xs text-gray-600 mt-2 text-center font-serif leading-tight"
                    style={{ 
-                     fontFamily: 'TAN - Angleton, sans-serif',
                      whiteSpace: 'nowrap',
                      width: '120px'
                    }}
                  >
-                   {[
-                     'Date & Accommodation Selection',
-                     'Package Selection', 
-                     'Safari Selection',
-                     'Confirmation'
-                   ][index]}
+                   {item.label}
                  </span>
                </div>
              ))}
+             {/* Connecting Lines */}
+             <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-3/4 h-px bg-gray-300 -z-10"></div>
            </div>
          </div>
        </div>
@@ -461,38 +464,46 @@ const DateVillaSelection = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Calendar Section */}
-            <div className="lg:col-span-2">
-              <div style={{ height: '362px' }}>
-                {/* Header */}
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <button 
-                      onClick={() => navigateMonth('prev')}
-                      className="p-2 hover:bg-gray-100 rounded"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-gray-800" />
-                    </button>
-                    <h3 className="text-lg font-serif text-gray-800">Select Your Dates</h3>
-                    <button 
-                      onClick={() => navigateMonth('next')}
-                      className="p-2 hover:bg-gray-100 rounded"
-                    >
-                      <ChevronRight className="w-5 h-5 text-gray-800" />
-                    </button>
-                  </div>
-                  <div className="w-full border-b border-black"></div>
-                </div>
-                
-                {/* Calendar */}
-                <div className="flex h-full justify-center">
-                  {[0, 1, 2].map(offset => renderCalendar(offset))}
-                </div>
-              </div>
-            </div>
+             {/* Calendar Section */}
+             <div className="lg:col-span-2">
+               {/* Header */}
+               <div className="px-4 pt-4">
+                 <div className="flex items-center justify-between mb-4">
+                   <button 
+                     onClick={() => navigateMonth('prev')}
+                     className="p-2 hover:bg-gray-100 rounded"
+                   >
+                     <ChevronLeft className="w-5 h-5 text-gray-800" />
+                   </button>
+                   <h3 className="text-lg font-serif text-gray-800">Select Your Dates</h3>
+                   <button 
+                     onClick={() => navigateMonth('next')}
+                     className="p-2 hover:bg-gray-100 rounded"
+                   >
+                     <ChevronRight className="w-5 h-5 text-gray-800" />
+                   </button>
+                 </div>
+                 <div className="w-full border-b border-black"></div>
+               </div>
+               
+               {/* Calendar */}
+               <div className="flex justify-center items-start px-4">
+                 {[0, 1, 2].map((offset, index) => (
+                   <div key={offset} className="flex">
+                     {renderCalendar(offset)}
+                     {index < 2 && (
+                       <div 
+                         className="w-px bg-gray-400"
+                         style={{ height: '380px' }}
+                       />
+                     )}
+                   </div>
+                 ))}
+               </div>
+             </div>
 
           {/* Combined Booking Details - Exact Design */}
-          <div className="relative w-full max-w-sm mx-auto" style={{ height: '362px' }}>
+          <div className="relative w-full max-w-sm mx-auto mt-16" style={{ height: '420px' }}>
             {/* Header */}
             <div className="relative w-full h-6 border border-gray-600" style={{ backgroundColor: '#3F3E3E' }}>
               <span 
@@ -527,10 +538,10 @@ const DateVillaSelection = () => {
               <div className="absolute w-1/2 h-full bg-white border border-gray-600 left-0">
                 <div className="relative h-full flex flex-col items-center justify-center">
                     <span className="font-normal mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', fontSize: '64px', lineHeight: '1', color: '#3F3E3E' }}>
-                      {selectedDates.arrival ? new Date(selectedDates.arrival).getDate().toString().padStart(2, '0') : '01'}
+                      {selectedDates.arrival ? new Date(selectedDates.arrival).getDate().toString().padStart(2, '0') : '--'}
                     </span>
                   <span className="text-xs font-normal text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
-                    {selectedDates.arrival ? months[new Date(selectedDates.arrival).getMonth()] : 'October'}
+                    {selectedDates.arrival ? months[new Date(selectedDates.arrival).getMonth()] : 'Select Date'}
                   </span>
                 </div>
               </div>
@@ -539,10 +550,10 @@ const DateVillaSelection = () => {
               <div className="absolute w-1/2 h-full bg-white border border-gray-600 right-0">
                 <div className="relative h-full flex flex-col items-center justify-center">
                     <span className="font-normal mb-1" style={{ fontFamily: 'TAN - Angleton, sans-serif', fontSize: '64px', lineHeight: '1', color: '#3F3E3E' }}>
-                      {selectedDates.departure ? new Date(selectedDates.departure).getDate().toString().padStart(2, '0') : '23'}
+                      {selectedDates.departure ? new Date(selectedDates.departure).getDate().toString().padStart(2, '0') : '--'}
                     </span>
                   <span className="text-xs font-normal text-gray-500" style={{ fontFamily: 'Quicksand, sans-serif' }}>
-                    {selectedDates.departure ? months[new Date(selectedDates.departure).getMonth()] : 'December'}
+                    {selectedDates.departure ? months[new Date(selectedDates.departure).getMonth()] : 'Select Date'}
                   </span>
                 </div>
               </div>
@@ -822,28 +833,25 @@ const DateVillaSelection = () => {
                         />
                         </div>
                       </div>
-                    ) : selectedVilla.id === 'glass-cottage' ? (
-                      <div className="relative w-full overflow-hidden">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>
-                          </div>
-                          <div className="ml-4">
+                      ) : selectedVilla.id === 'glass-cottage' ? (
+                        <div>
+                          <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>
+                          <div className="relative w-full overflow-hidden">
                             <img 
-                              src="/images/glass-cottage/main.jpg" 
-                              alt="Glass Cottage" 
-                              className="w-20 h-20 object-cover rounded-lg"
+                              src="/images/glass-cottage/amenities-icons.png" 
+                              alt="Glass Cottage amenities" 
+                              className="w-full max-w-sm mx-auto h-auto object-contain"
+                              style={{ minHeight: '120px' }}
                               onError={(e) => {
-                                console.error('Failed to load Glass Cottage image:', e);
+                                console.error('Failed to load amenities image:', e);
                                 e.currentTarget.style.display = 'none';
                               }}
                               onLoad={() => {
-                                console.log('Glass Cottage image loaded successfully');
+                                console.log('Glass Cottage amenities image loaded successfully');
                               }}
                             />
                           </div>
                         </div>
-                      </div>
                     ) : selectedVilla.id === 'hornbill-villa' ? (
                       <div>
                         <h4 className="font-medium mb-3" style={{ color: '#3F3E3E' }}>Amenities</h4>

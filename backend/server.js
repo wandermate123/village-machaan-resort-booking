@@ -3,12 +3,32 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
+const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Add startup logging
 console.log('🚀 Starting Village Machaan Backend Server...');
+
+// Database connection
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/village_machaan';
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('✅ MongoDB connected successfully');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
+
+// Connect to database
+connectDB();
 
 // Middleware
 app.use(helmet());
@@ -25,14 +45,21 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Import routes
+const safariEnquiryRoutes = require('./routes/safariEnquiryRoutes');
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    service: 'Village Machaan Backend'
+    service: 'Village Machaan Backend',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
+
+// API Routes
+app.use('/api/safari-enquiries', safariEnquiryRoutes);
 
 // Payment endpoints (demo implementation)
 app.post('/api/payments/create-order', [
