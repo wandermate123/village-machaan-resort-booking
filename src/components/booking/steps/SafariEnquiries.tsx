@@ -52,6 +52,8 @@ const SafariEnquiries = () => {
     };
     setSafariBookings(prev => [...prev, newSafari]);
     setNextSafariId(prev => prev + 1);
+    // Increment safari enquiry counter
+    dispatch({ type: 'INCREMENT_SAFARI_ENQUIRY_COUNT' });
   };
 
   const removeSafariBox = (safariId: string) => {
@@ -60,80 +62,49 @@ const SafariEnquiries = () => {
 
   const handleSafariBookingChange = (safariId: string, field: string, value: string | number) => {
     setSafariBookings(prev => 
-      prev.map(booking => 
-        booking.id === safariId 
-          ? { ...booking, [field]: value }
-          : booking
-      )
+      prev.map(booking => {
+        if (booking.id === safariId) {
+          const updatedBooking = { ...booking, [field]: value };
+          
+          // If date is being changed to check-in day and current timing is morning, clear timing
+          if (field === 'date' && value === state.checkIn && booking.timing === 'morning') {
+            updatedBooking.timing = '';
+          }
+          
+          return updatedBooking;
+        }
+        return booking;
+      })
     );
   };
 
-  const sendAllSafariEnquiries = async () => {
-    // Validate all safari bookings
+  const completeSafariEnquiries = () => {
+    // Simple validation - just check if all required fields are filled
     const incompleteBookings = safariBookings.filter(booking => !booking.date || !booking.timing);
     if (incompleteBookings.length > 0) {
-      showError('Incomplete Details', 'Please fill in all required fields for all safari bookings before submitting');
+      showError('Incomplete Details', 'Please fill in all required fields for all safari bookings before proceeding');
       return;
     }
 
-    if (safariBookings.length === 0) {
-      showError('No Safaris', 'Please add at least one safari before submitting');
+    // Check for morning safari on check-in day
+    const morningOnCheckIn = safariBookings.filter(booking => 
+      booking.date === state.checkIn && booking.timing === 'morning'
+    );
+    if (morningOnCheckIn.length > 0) {
+      showError('Invalid Selection', 'Morning safari is not available on your check-in day. Please select afternoon or evening safari for that day.');
       return;
     }
 
-    // Validate guest details are filled
-    if (!state.guestDetails.firstName || !state.guestDetails.lastName || !state.guestDetails.email) {
-      showError('Guest Details Required', 'Please fill in your guest details (name and email) before submitting safari enquiries');
-      return;
-    }
+    // Mark all enquiries as completed
+    setSafariBookings(prev => 
+      prev.map(booking => ({ ...booking, enquirySent: true }))
+    );
 
-    setIsSubmitting(true);
+    // Process selected safaris and proceed to next step
+    processSelectedSafaris();
+    dispatch({ type: 'SET_STEP', payload: 4 });
     
-    try {
-      // Prepare all enquiries for bulk submission
-      const enquiries = safariBookings.map((booking, index) => ({
-        guest_name: `${state.guestDetails.firstName} ${state.guestDetails.lastName}`,
-        email: state.guestDetails.email,
-        phone: state.guestDetails.phone,
-        booking_id: state.bookingId || `temp_${Date.now()}`,
-        safari_name: `Jungle Safari ${index + 1}`,
-        safari_option_id: booking.safariId || 'general',
-        preferred_date: booking.date,
-        preferred_timing: booking.timing,
-        number_of_persons: booking.persons,
-        special_requirements: state.specialRequests || '',
-        status: 'pending' as const
-      }));
-
-      // Debug logging
-      console.log('=== SAFARI ENQUIRY DEBUG ===');
-      console.log('Guest Details:', state.guestDetails);
-      console.log('Enquiries to submit:', enquiries);
-      console.log('============================');
-
-      // Send all enquiries using bulk API
-      const result = await SafariQueriesService.createBulkSafariQueries(enquiries);
-      
-      if (result.success) {
-        // Mark all as sent
-        setSafariBookings(prev => 
-          prev.map(booking => ({ ...booking, enquirySent: true }))
-        );
-        showSuccess('All Enquiries Sent', `${result.count} safari enquiry(ies) have been submitted successfully`);
-        
-        // Force re-render by updating state
-        setTimeout(() => {
-          setSafariBookings(prev => [...prev]);
-        }, 100);
-      } else {
-        showError('Submission Error', result.error || 'Failed to submit safari enquiries. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error sending safari enquiries:', error);
-      showError('Submission Error', 'Failed to submit safari enquiries. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    showSuccess('Safari Enquiries Completed', `${safariBookings.length} safari enquiry(ies) have been noted and will be processed by our team.`);
   };
 
   const generateDateOptions = () => {
@@ -203,30 +174,18 @@ const SafariEnquiries = () => {
   };
 
   const handleSkipSafari = () => {
-    dispatch({ type: 'SET_SAFARIS', payload: [] });
-    dispatch({ type: 'CALCULATE_TOTAL' });
+    // Process any safari bookings that were added but not submitted
+    if (safariBookings.length > 0) {
+      processSelectedSafaris();
+    } else {
+      dispatch({ type: 'SET_SAFARIS', payload: [] });
+      dispatch({ type: 'CALCULATE_TOTAL' });
+    }
     dispatch({ type: 'SET_STEP', payload: 4 });
   };
 
-  const hasEnquirySent = safariBookings.some(booking => booking.enquirySent);
   const hasIncompleteEnquiries = safariBookings.some(booking => !booking.date || !booking.timing);
   const allEnquiriesSent = safariBookings.length > 0 && safariBookings.every(booking => booking.enquirySent);
-  // Allow proceeding if no safari bookings OR all enquiries sent OR user explicitly wants to skip
-  const canProceed = safariBookings.length === 0 || allEnquiriesSent || (safariBookings.length > 0 && !hasIncompleteEnquiries);
-  
-  // Debug logging (can be removed in production)
-  console.log('=== SAFARI DEBUG INFO ===');
-  console.log('Safari Bookings:', safariBookings);
-  console.log('Has Enquiry Sent:', hasEnquirySent);
-  console.log('Has Incomplete Enquiries:', hasIncompleteEnquiries);
-  console.log('All Enquiries Sent:', allEnquiriesSent);
-  console.log('Can Proceed:', canProceed);
-  console.log('Button should show:', safariBookings.length > 0 && !safariBookings.every(booking => booking.enquirySent));
-  console.log('Button disabled:', safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting);
-  console.log('Safari bookings length:', safariBookings.length);
-  console.log('Every booking enquiry sent:', safariBookings.every(booking => booking.enquirySent));
-  console.log('Individual booking enquiry sent:', safariBookings.map(b => ({ id: b.id, enquirySent: b.enquirySent })));
-  console.log('========================');
 
   const dateOptions = generateDateOptions();
   const safariTotal = calculateSafariTotal();
@@ -448,7 +407,7 @@ const SafariEnquiries = () => {
         </div>
 
         {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Safari Section Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -473,7 +432,7 @@ const SafariEnquiries = () => {
               onClick={handleSkipSafari}
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 text-sm font-medium transition-all duration-200 rounded-lg border border-gray-200"
             >
-              CONTINUE WITHOUT SAFARI
+              CONTINUE
             </button>
           </div>
         </div>
@@ -497,19 +456,19 @@ const SafariEnquiries = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Responsive Container */}
-            <div className="w-full overflow-x-auto">
-              <div className="min-w-max mx-auto">
-            {safariBookings.map((booking, index) => (
-                  <div key={booking.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 mb-6" style={{ padding: 0, margin: 0 }}>
+          <div className="space-y-8">
+            {/* Safari Container */}
+            <div className="w-full">
+              {safariBookings.map((booking, index) => (
+                <div key={booking.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 mb-8 last:mb-0">
                 {/* Safari Box - Exact Design Match */}
-                <div className="flex mx-auto max-w-full overflow-hidden" style={{ width: '1062px', height: '415px', padding: 0, margin: 0 }}>
+                <div className="flex mx-auto overflow-hidden" style={{ maxWidth: '900px', width: '100%', height: '415px', padding: 0, margin: 0 }}>
                   {/* Left Image Section */}
                   <div 
                     className="relative flex-shrink-0"
                     style={{
-                      width: '529px',
+                      width: '45%',
+                      minWidth: '400px',
                       height: '415px',
                       background: 'url(/images/safari/tiger-safari.jpg) no-repeat 0 0',
                       backgroundSize: 'cover',
@@ -531,7 +490,8 @@ const SafariEnquiries = () => {
                   <div 
                     className="relative bg-white flex-shrink-0 overflow-hidden"
                     style={{
-                      width: '533px',
+                      width: '55%',
+                      minWidth: '500px',
                       height: '415px',
                       padding: '27px 24px'
                     }}
@@ -582,7 +542,7 @@ const SafariEnquiries = () => {
                         width: '229px',
                         height: '18px',
                         top: '134px',
-                        right: '10px',
+                        right: '20px',
                         zIndex: 4
                       }}
                     >
@@ -609,7 +569,7 @@ const SafariEnquiries = () => {
                     <div 
                       className="absolute"
                       style={{
-                        width: '396px',
+                        width: '300px',
                         height: '46px',
                         top: '237px',
                         left: '20px',
@@ -657,7 +617,7 @@ const SafariEnquiries = () => {
                     <div 
                       className="absolute"
                       style={{
-                        width: '396px',
+                        width: '300px',
                         height: '46px',
                         top: '291px',
                         left: '20px',
@@ -683,7 +643,12 @@ const SafariEnquiries = () => {
                             disabled={booking.enquirySent}
                           >
                           <option value="">Select Time</option>
-                          <option value="morning">Morning</option>
+                          <option 
+                            value="morning" 
+                            disabled={booking.date === state.checkIn}
+                          >
+                            Morning{booking.date === state.checkIn ? ' (Not available on check-in day)' : ''}
+                          </option>
                           <option value="afternoon">Afternoon</option>
                           <option value="evening">Evening</option>
                           </select>
@@ -721,18 +686,18 @@ const SafariEnquiries = () => {
                         width: '98px',
                         height: '49px',
                         top: '289px',
-                        right: '10px',
+                        right: '5px',
                         zIndex: 5
                       }}
                     >
-                      Note: The morning safari offers the best chance to spot tigers and other wildlife, as animals are most active at dawn. Guests can also experience cooler temperatures and excellent birdwatching opportunities.
+                      Note: The morning safari offers the best chance to spot tigers and other wildlife, as animals are most active at dawn. Guests can also experience cooler temperatures and excellent birdwatching opportunities. Morning safari is not available on your check-in day.
                     </p>
                         
                     {/* Persons Input */}
                     <div 
                       className="absolute"
                       style={{
-                        width: '396px',
+                        width: '300px',
                         height: '46px',
                         top: '345px',
                         left: '20px',
@@ -783,7 +748,7 @@ const SafariEnquiries = () => {
                         className="absolute top-4 right-4 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium"
                         style={{
                           top: '20px',
-                          right: '10px'
+                          right: '20px'
                         }}
                       >
                         ✓ Sent
@@ -796,7 +761,7 @@ const SafariEnquiries = () => {
                       className="absolute top-4 right-16 p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
                       style={{
                         top: '20px',
-                        right: '60px'
+                        right: '5px'
                       }}
                       title="Remove Safari"
                     >
@@ -806,7 +771,6 @@ const SafariEnquiries = () => {
                 </div>
               </div>
             ))}
-              </div>
             </div>
           </div>
         )}
@@ -884,60 +848,19 @@ const SafariEnquiries = () => {
             {/* Safari Enquiry Button - Always show if there are safari bookings */}
             {safariBookings.length > 0 && (
               <button
-                onClick={() => {
-                  console.log('=== SAFARI BUTTON CLICKED ===');
-                  console.log('Safari bookings:', safariBookings);
-                  sendAllSafariEnquiries();
-                }}
-                disabled={safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting}
+                onClick={completeSafariEnquiries}
+                disabled={safariBookings.some(booking => !booking.date || !booking.timing)}
                 className={`flex items-center space-x-2 px-6 py-3 rounded text-sm font-medium transition-colors ${
-                  safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting
+                  safariBookings.some(booking => !booking.date || !booking.timing)
                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Complete Safari Enquiries</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                <span>Complete Safari Enquiries</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             )}
           
-            {/* Continue Button */}
-            <button
-              onClick={() => {
-                console.log('=== CONTINUE BUTTON CLICKED ===');
-                console.log('Can proceed:', canProceed);
-                if (canProceed) {
-                  handleNext();
-                } else {
-                  console.log('Cannot proceed - safari enquiries not completed');
-                }
-              }}
-              disabled={!canProceed}
-              className={`flex items-center space-x-2 px-8 py-3 rounded text-sm font-medium transition-colors ${
-                !canProceed
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-gray-800'
-              }`}
-            >
-              <span>
-                {!canProceed
-                  ? 'Complete Safari Details First' 
-                  : safariBookings.length > 0 && !allEnquiriesSent
-                    ? 'Continue Without Submitting Safari'
-                    : 'Continue to Confirmation'
-                }
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
 

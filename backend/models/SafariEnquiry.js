@@ -168,3 +168,4 @@ safariEnquirySchema.statics.getByDateRange = function(startDate, endDate) {
 
 module.exports = mongoose.model('SafariEnquiry', safariEnquirySchema);
 
+

@@ -523,9 +523,11 @@ const BookingSummary = () => {
                     <span className="text-gray-800">₹{villaTotal.toLocaleString()}</span>
                   </div>
                   
-                  {safariTotal > 0 && (
+                  {state.safariEnquiryCount > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Wildlife Safari Inquiries</span>
+                      <span className="text-gray-600">
+                        Wildlife Safari Inquiries ({state.safariEnquiryCount} enquiry{state.safariEnquiryCount > 1 ? 'ies' : ''})
+                      </span>
                       <span className="text-red-600 text-sm">Pending Confirmation</span>
                     </div>
                   )}
@@ -551,10 +553,15 @@ const BookingSummary = () => {
             <h3 className="text-xl font-light text-gray-800 text-center mb-6">Guest Information</h3>
 
             {/* Safari Warning */}
-            {state.selectedSafaris.length > 0 && (
+            {state.safariEnquiryCount > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <p className="text-red-600 text-sm font-medium">
                   Safari requests are treated as inquiries only. Confirmation will be shared by our team with a payment link if dates are available, or alternate options if not.
+                  {state.safariEnquiryCount > 0 && (
+                    <span className="block mt-1 font-semibold">
+                      You have {state.safariEnquiryCount} safari enquiry{state.safariEnquiryCount > 1 ? 'ies' : ''} pending.
+                    </span>
+                  )}
                 </p>
               </div>
             )}

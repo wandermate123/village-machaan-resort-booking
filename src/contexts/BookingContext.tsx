@@ -37,6 +37,7 @@ export interface BookingState {
   selectedVilla: Villa | null;
   selectedPackage: Package | null;
   selectedSafaris: SafariOption[];
+  safariEnquiryCount: number;
   guestDetails: {
     firstName: string;
     lastName: string;
@@ -57,6 +58,7 @@ type BookingAction =
   | { type: 'ADD_SAFARI'; payload: SafariOption }
   | { type: 'REMOVE_SAFARI'; payload: string }
   | { type: 'SET_SAFARIS'; payload: SafariOption[] }
+  | { type: 'INCREMENT_SAFARI_ENQUIRY_COUNT' }
   | { type: 'SET_GUEST_DETAILS'; payload: BookingState['guestDetails'] }
   | { type: 'CALCULATE_TOTAL' }
   | { type: 'RESET_BOOKING' }
@@ -70,6 +72,7 @@ const initialState: BookingState = {
   selectedVilla: null,
   selectedPackage: null,
   selectedSafaris: [],
+  safariEnquiryCount: 0,
   guestDetails: {
     firstName: '',
     lastName: '',
@@ -105,6 +108,8 @@ function bookingReducer(state: BookingState, action: BookingAction): BookingStat
       };
     case 'SET_SAFARIS':
       return { ...state, selectedSafaris: action.payload };
+    case 'INCREMENT_SAFARI_ENQUIRY_COUNT':
+      return { ...state, safariEnquiryCount: state.safariEnquiryCount + 1 };
     case 'SET_GUEST_DETAILS':
       return { ...state, guestDetails: action.payload };
     case 'CALCULATE_TOTAL':
