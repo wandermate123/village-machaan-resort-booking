@@ -115,20 +115,46 @@ const PackageSelection = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, [state.selectedVilla]); // Re-load packages when villa selection changes
+  }, []);
+
+  // Refetch packages when selected villa changes to update Room Only package image
+  useEffect(() => {
+    if (packages.length > 0) {
+      fetchPackages();
+    }
+  }, [state.selectedVilla]);
 
   const fetchPackages = async () => {
     setLoading(true);
     try {
-      // Pass the selected villa to get dynamic images
-      const packagesData = await PackageService.getActivePackages(state.selectedVilla);
+      const packagesData = await PackageService.getActivePackages();
       
       // Add demo images and highlights for display
-      const packagesWithDisplay = packagesData.map((pkg, index) => ({
-        ...pkg,
-        image: (pkg.images && pkg.images.length > 0) ? pkg.images[0] : (pkg.id === 'basic-stay' ? '/images/glass-cottage/main.jpg' : '/images/hornbill/main.jpg'),
-        highlights: pkg.inclusions || []
-      }));
+      const packagesWithDisplay = packagesData.map((pkg, index) => {
+        let imagePath = '';
+        
+        if (pkg.id === 'basic-stay') {
+          // Room Only package - use selected villa's image
+          if (state.selectedVilla && state.selectedVilla.images && state.selectedVilla.images.length > 0) {
+            imagePath = state.selectedVilla.images[0];
+          } else {
+            // Fallback to glass cottage if no villa selected
+            imagePath = '/images/glass-cottage/main.jpg';
+          }
+        } else if (pkg.id === 'breakfast-package') {
+          // Breakfast package - use fixed breakfast image
+          imagePath = '/images/hornbill/main.jpg';
+        } else {
+          // Other packages - use their configured image or fallback
+          imagePath = (pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/glass-cottage/main.jpg';
+        }
+        
+        return {
+          ...pkg,
+          image: imagePath,
+          highlights: pkg.inclusions || []
+        };
+      });
       
       setPackages(packagesWithDisplay);
     } catch (error) {
@@ -405,12 +431,6 @@ const PackageSelection = () => {
                       className="w-full h-full object-cover"
                       style={{ minHeight: '400px' }}
                     />
-                    {/* Dynamic Image Indicator */}
-                    {state.selectedVilla && (
-                      <div className="absolute top-4 left-4 bg-green-500/90 text-white px-3 py-1 rounded-full text-xs font-medium">
-                        📸 {state.selectedVilla.name} Images
-                      </div>
-                    )}
                     <button className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full">
                       <ChevronLeft className="w-5 h-5" />
                     </button>

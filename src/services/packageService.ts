@@ -85,11 +85,11 @@ export class PackageService {
   }
 
   // Get active packages only
-  static async getActivePackages(selectedVilla?: any): Promise<Package[]> {
+  static async getActivePackages(): Promise<Package[]> {
     try {
       if (!isSupabaseConfigured) {
         console.log('📝 Supabase not configured, using demo package data');
-        return this.getDynamicPackages(selectedVilla);
+        return DEMO_PACKAGES.filter(pkg => pkg.is_active);
       }
 
       const { data, error } = await supabase
@@ -106,39 +106,14 @@ export class PackageService {
       if (!data || data.length === 0) {
         console.log('📝 No active packages in database, inserting demo data...');
         await this.insertDemoPackages();
-        return this.getDynamicPackages(selectedVilla);
+        return DEMO_PACKAGES.filter(pkg => pkg.is_active);
       }
       
-      // Update images dynamically based on selected villa
-      return data.map(pkg => ({
-        ...pkg,
-        images: this.getDynamicPackageImages(pkg.id, selectedVilla)
-      }));
+      return data;
     } catch (error) {
       console.error('❌ Failed to get active packages:', error);
       throw error;
     }
-  }
-
-  // Get dynamic packages with villa-specific images
-  private static getDynamicPackages(selectedVilla?: any): Package[] {
-    return DEMO_PACKAGES.filter(pkg => pkg.is_active).map(pkg => ({
-      ...pkg,
-      images: this.getDynamicPackageImages(pkg.id, selectedVilla)
-    }));
-  }
-
-  // Get dynamic images based on package type and selected villa
-  private static getDynamicPackageImages(packageId: string, selectedVilla?: any): string[] {
-    // If no villa selected, use default images
-    if (!selectedVilla || !selectedVilla.images || selectedVilla.images.length === 0) {
-      return packageId === 'basic-stay' 
-        ? ['/images/glass-cottage/main.jpg'] 
-        : ['/images/hornbill/main.jpg'];
-    }
-
-    // Use the selected villa's images for both packages
-    return selectedVilla.images;
   }
 
   // Insert demo packages if database is empty
