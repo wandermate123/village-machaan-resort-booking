@@ -115,12 +115,13 @@ const PackageSelection = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, []);
+  }, [state.selectedVilla]); // Re-load packages when villa selection changes
 
   const fetchPackages = async () => {
     setLoading(true);
     try {
-      const packagesData = await PackageService.getActivePackages();
+      // Pass the selected villa to get dynamic images
+      const packagesData = await PackageService.getActivePackages(state.selectedVilla);
       
       // Add demo images and highlights for display
       const packagesWithDisplay = packagesData.map((pkg, index) => ({
@@ -399,11 +400,17 @@ const PackageSelection = () => {
                   {/* Package Image */}
                   <div className="relative">
                     <img 
-                      src={(pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/glass-cottage/main.jpg'}
+                      src={pkg.image || '/images/glass-cottage/main.jpg'}
                       alt={pkg.name}
                       className="w-full h-full object-cover"
                       style={{ minHeight: '400px' }}
                     />
+                    {/* Dynamic Image Indicator */}
+                    {state.selectedVilla && (
+                      <div className="absolute top-4 left-4 bg-green-500/90 text-white px-3 py-1 rounded-full text-xs font-medium">
+                        📸 {state.selectedVilla.name} Images
+                      </div>
+                    )}
                     <button className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full">
                       <ChevronLeft className="w-5 h-5" />
                     </button>
