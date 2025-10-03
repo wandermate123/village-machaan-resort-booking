@@ -22,6 +22,7 @@ import {
 import { SafariQueriesService, SafariQuery, SafariQueryFilters, SafariQueryStats } from '../../services/safariQueriesService';
 import { useToast } from '../common/Toast';
 import LoadingSpinner from '../common/LoadingSpinner';
+import ConfirmDialog from '../common/ConfirmDialog';
 import { supabase } from '../../lib/supabase';
 
 const SafariQueriesManagement = () => {
