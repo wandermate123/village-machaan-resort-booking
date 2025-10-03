@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X, CheckCircle, AlertCircle, DollarSign, Calendar, Users, Package } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle, DollarSign, Calendar, Users, Package, Camera } from 'lucide-react';
 import { BookingService } from '../../services/bookingService';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 interface Notification {
   id: string;
-  type: 'booking' | 'payment' | 'cancellation' | 'system' | 'checkin' | 'checkout';
+  type: 'booking' | 'payment' | 'cancellation' | 'system' | 'checkin' | 'checkout' | 'safari_enquiry';
   title: string;
   message: string;
   timestamp: Date;
@@ -169,9 +169,26 @@ const RealTimeNotifications = () => {
       )
       .subscribe();
 
+    // Subscribe to safari enquiry changes
+    const safariSubscription = supabase
+      .channel('safari-enquiry-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'safari_queries'
+        },
+        (payload) => {
+          handleRealtimeSafariEnquiryChange(payload);
+        }
+      )
+      .subscribe();
+
     return () => {
       bookingSubscription.unsubscribe();
       paymentSubscription.unsubscribe();
+      safariSubscription.unsubscribe();
     };
   };
 
@@ -240,6 +257,19 @@ const RealTimeNotifications = () => {
     }
   };
 
+  const handleRealtimeSafariEnquiryChange = (payload: any) => {
+    const { eventType, new: newRecord } = payload;
+
+    if (eventType === 'INSERT') {
+      addNotification({
+        type: 'safari_enquiry',
+        title: 'New Safari Enquiry',
+        message: `${newRecord.guest_name} submitted a safari enquiry for ${newRecord.safari_name} (${newRecord.number_of_persons} persons)`,
+        data: newRecord
+      });
+    }
+  };
+
   const addNotification = (notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const notification: Notification = {
       ...notificationData,
@@ -289,6 +319,7 @@ const RealTimeNotifications = () => {
       case 'cancellation': return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'checkin': return <Users className="w-4 h-4 text-purple-500" />;
       case 'checkout': return <Users className="w-4 h-4 text-orange-500" />;
+      case 'safari_enquiry': return <Camera className="w-4 h-4 text-amber-500" />;
       case 'system': return <CheckCircle className="w-4 h-4 text-gray-500" />;
       default: return <CheckCircle className="w-4 h-4 text-gray-500" />;
     }
@@ -301,6 +332,7 @@ const RealTimeNotifications = () => {
       case 'cancellation': return 'border-l-red-500';
       case 'checkin': return 'border-l-purple-500';
       case 'checkout': return 'border-l-orange-500';
+      case 'safari_enquiry': return 'border-l-amber-500';
       default: return 'border-l-gray-500';
     }
   };

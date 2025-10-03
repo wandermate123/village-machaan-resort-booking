@@ -384,25 +384,42 @@ const SafariQueriesManagement = () => {
                   filteredQueries.map((query) => (
                     <tr key={query.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
+                        <div className="space-y-1">
                           <div className="text-sm font-medium text-primary-950">{query.guest_name}</div>
-                          <div className="text-sm text-primary-600">{query.email}</div>
+                          <div className="flex items-center space-x-1 text-sm text-primary-600">
+                            <Mail className="w-3 h-3" />
+                            <span>{query.email}</span>
+                          </div>
                           {query.phone && (
-                            <div className="text-sm text-primary-600">{query.phone}</div>
+                            <div className="flex items-center space-x-1 text-sm text-primary-600">
+                              <Phone className="w-3 h-3" />
+                              <span>{query.phone}</span>
+                            </div>
                           )}
                           {query.booking_id && (
-                            <div className="text-xs text-gray-500">Booking: {query.booking_id}</div>
+                            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              Booking: {query.booking_id}
+                            </div>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div>
+                        <div className="space-y-1">
                           <div className="text-sm font-medium text-primary-950">{query.safari_name}</div>
-                          <div className="text-sm text-primary-600">
-                            {query.number_of_persons} person{query.number_of_persons !== 1 ? 's' : ''}
+                          <div className="flex items-center space-x-1 text-sm text-primary-600">
+                            <Users className="w-3 h-3" />
+                            <span>{query.number_of_persons} person{query.number_of_persons !== 1 ? 's' : ''}</span>
                           </div>
                           {query.preferred_timing && (
-                            <div className="text-sm text-primary-600">Timing: {query.preferred_timing}</div>
+                            <div className="flex items-center space-x-1 text-sm text-primary-600">
+                              <Clock className="w-3 h-3" />
+                              <span className="capitalize">{query.preferred_timing}</span>
+                            </div>
+                          )}
+                          {query.special_requirements && (
+                            <div className="text-xs text-gray-600 bg-yellow-50 px-2 py-1 rounded border-l-2 border-yellow-300">
+                              <strong>Special:</strong> {query.special_requirements}
+                            </div>
                           )}
                         </div>
                       </td>
