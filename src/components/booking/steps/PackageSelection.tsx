@@ -115,7 +115,7 @@ const PackageSelection = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, []);
+  }, [state.selectedVilla]);
 
   const fetchPackages = async () => {
     setLoading(true);
@@ -123,11 +123,20 @@ const PackageSelection = () => {
       const packagesData = await PackageService.getActivePackages();
       
       // Add demo images and highlights for display
-      const packagesWithDisplay = packagesData.map((pkg, index) => ({
-        ...pkg,
-        image: (pkg.images && pkg.images.length > 0) ? pkg.images[0] : (pkg.id === 'basic-stay' ? '/images/glass-cottage/main.jpg' : '/images/hornbill/main.jpg'),
-        highlights: pkg.inclusions || []
-      }));
+      const packagesWithDisplay = packagesData.map((pkg, index) => {
+        let packageImage = pkg.images && pkg.images.length > 0 ? pkg.images[0] : '/images/hornbill/main.jpg';
+        
+        // For basic-stay package, use the selected villa's image
+        if (pkg.id === 'basic-stay' && state.selectedVilla?.images && state.selectedVilla.images.length > 0) {
+          packageImage = state.selectedVilla.images[0];
+        }
+        
+        return {
+          ...pkg,
+          image: packageImage,
+          highlights: pkg.inclusions || []
+        };
+      });
       
       setPackages(packagesWithDisplay);
     } catch (error) {
