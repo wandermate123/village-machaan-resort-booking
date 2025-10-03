@@ -10,15 +10,17 @@ type PackageUpdate = Database['public']['Tables']['packages']['Update'];
 const DEMO_PACKAGES: Package[] = [
   {
     id: 'basic-stay',
-    name: 'Basic Stay Package',
-    description: 'Comfortable accommodation with essential amenities. Perfect for guests who prefer to explore dining options outside the resort.',
+    name: 'Room Only Package',
+    description: 'Perfect for guests who prefer flexibility in dining. Includes comfortable accommodation with essential amenities, allowing you to explore local restaurants and dining options.',
     inclusions: [
       'Comfortable villa accommodation',
       'Daily housekeeping service',
       'Welcome refreshments on arrival',
       'Access to resort facilities',
       'Complimentary WiFi',
-      '24/7 front desk assistance'
+      '24/7 front desk assistance',
+      'Free parking',
+      'Room service available (additional charges apply)'
     ],
     price: 0,
     duration: 'Per night',
@@ -29,15 +31,17 @@ const DEMO_PACKAGES: Package[] = [
   },
   {
     id: 'breakfast-package',
-    name: 'Breakfast Package',
-    description: 'Includes daily breakfast with your stay. Start your day with a delicious meal featuring local and continental options.',
+    name: 'Bed & Breakfast Package',
+    description: 'Start your day right with our delicious breakfast package. Includes everything from Room Only Package plus daily breakfast featuring fresh local ingredients and continental options.',
     inclusions: [
-      'All Basic Stay Package amenities',
+      'All Room Only Package amenities',
       'Daily breakfast for all guests',
       'Fresh local and continental options',
-      'Special dietary accommodations',
+      'Special dietary accommodations available',
       'Early morning tea/coffee service',
-      'Seasonal fruit platter'
+      'Seasonal fruit platter',
+      'Made-to-order breakfast items',
+      'Breakfast served 7:00 AM - 10:00 AM'
     ],
     price: 500,
     duration: 'Per night',
