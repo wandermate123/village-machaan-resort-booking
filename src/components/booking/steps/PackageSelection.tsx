@@ -117,44 +117,17 @@ const PackageSelection = () => {
     fetchPackages();
   }, []);
 
-  // Refetch packages when selected villa changes to update Room Only package image
-  useEffect(() => {
-    if (packages.length > 0) {
-      fetchPackages();
-    }
-  }, [state.selectedVilla]);
-
   const fetchPackages = async () => {
     setLoading(true);
     try {
       const packagesData = await PackageService.getActivePackages();
       
       // Add demo images and highlights for display
-      const packagesWithDisplay = packagesData.map((pkg, index) => {
-        let imagePath = '';
-        
-        if (pkg.id === 'basic-stay') {
-          // Room Only package - use selected villa's image
-          if (state.selectedVilla && state.selectedVilla.images && state.selectedVilla.images.length > 0) {
-            imagePath = state.selectedVilla.images[0];
-          } else {
-            // Fallback to glass cottage if no villa selected
-            imagePath = '/images/glass-cottage/main.jpg';
-          }
-        } else if (pkg.id === 'breakfast-package') {
-          // Breakfast package - use fixed breakfast image
-          imagePath = '/images/hornbill/main.jpg';
-        } else {
-          // Other packages - use their configured image or fallback
-          imagePath = (pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/glass-cottage/main.jpg';
-        }
-        
-        return {
-          ...pkg,
-          image: imagePath,
-          highlights: pkg.inclusions || []
-        };
-      });
+      const packagesWithDisplay = packagesData.map((pkg, index) => ({
+        ...pkg,
+        image: (pkg.images && pkg.images.length > 0) ? pkg.images[0] : (pkg.id === 'basic-stay' ? '/images/glass-cottage/main.jpg' : '/images/hornbill/main.jpg'),
+        highlights: pkg.inclusions || []
+      }));
       
       setPackages(packagesWithDisplay);
     } catch (error) {
@@ -426,7 +399,7 @@ const PackageSelection = () => {
                   {/* Package Image */}
                   <div className="relative">
                     <img 
-                      src={pkg.image || '/images/glass-cottage/main.jpg'}
+                      src={(pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/glass-cottage/main.jpg'}
                       alt={pkg.name}
                       className="w-full h-full object-cover"
                       style={{ minHeight: '400px' }}
