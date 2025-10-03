@@ -103,7 +103,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           checkIn: new Date().toISOString().split('T')[0],
           checkOut: new Date(Date.now() + 86400000).toISOString().split('T')[0],
           totalAmount: Math.round(amount / 2),
-          guestPhone: guestDetails.phone
+          guestPhone: guestDetails.phone,
+          adults: 2, // Default for half payment
+          children: 0
         });
         console.log('✅ Half payment confirmation email sent');
         
@@ -199,8 +201,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           checkOut: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           villaName: 'Selected Villa',
           totalAmount: amount,
-          advanceAmount: 0,
-          remainingAmount: 0
+          guestPhone: guestDetails.phone,
+          adults: 2, // Default for online payment
+          children: 0
         });
         console.log('✅ Online payment confirmation email sent');
         

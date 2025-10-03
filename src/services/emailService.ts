@@ -40,6 +40,8 @@ export class EmailService {
     checkOut: string;
     totalAmount: number;
     guestPhone?: string;
+    adults?: number;
+    children?: number;
   }): Promise<{ success: boolean; error?: string }> {
     try {
       // Always simulate email sending for demo
@@ -60,7 +62,7 @@ export class EmailService {
 
       const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID_CONFIRMATION;
       
-      const templateParams: EmailTemplate = {
+      const templateParams = {
         to_email: bookingData.email,
         to_name: bookingData.guestName,
         subject: `Booking Confirmation - ${bookingData.bookingId}`,
@@ -79,12 +81,19 @@ We look forward to welcoming you to our resort. If you have any questions, pleas
 
 Best regards,
 Village Machaan Resort Team`,
-        booking_id: bookingData.bookingId,
-        villa_name: bookingData.villaName,
+        // Template variables that match your EmailJS template
+        booking_reference: bookingData.bookingId,
+        cottage: bookingData.villaName,
         check_in: new Date(bookingData.checkIn).toLocaleDateString('en-IN'),
         check_out: new Date(bookingData.checkOut).toLocaleDateString('en-IN'),
+        guests: `${bookingData.adults || 1} Adults${bookingData.children ? `, ${bookingData.children} Children` : ''}`,
         total_amount: `₹${bookingData.totalAmount.toLocaleString()}`,
-        guest_phone: bookingData.guestPhone || ''
+        guest_phone: bookingData.guestPhone || '',
+        // Additional variables for flexibility
+        booking_id: bookingData.bookingId,
+        villa_name: bookingData.villaName,
+        guest_name: bookingData.guestName,
+        guest_email: bookingData.email
       };
 
       const response = await emailjs.send(

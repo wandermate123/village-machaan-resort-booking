@@ -34,7 +34,7 @@ const DEMO_VILLAS: Villa[] = [
     base_price: 18000,
     max_guests: 6,
     amenities: ['Garden View', 'Family Room', 'BBQ Area', 'Spacious Living', 'Modern Kitchen', 'Outdoor Seating'],
-    images: ['/images/hornbill/main.png', '/images/hornbill/exterior.jpg', '/images/hornbill/garden.jpg'],
+    images: ['/images/hornbill/main.jpg', '/images/hornbill/exterior.jpg', '/images/hornbill/garden.jpg'],
     status: 'active',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()

@@ -164,7 +164,9 @@ const BookingSummary = () => {
         checkIn: state.checkIn,
         checkOut: state.checkOut,
         totalAmount: total,
-        guestPhone: state.guestDetails.phone
+        guestPhone: state.guestDetails.phone,
+        adults: state.guests,
+        children: 0 // You can add children count if needed
       });
 
       // Send admin notification

@@ -41,7 +41,7 @@ const DEMO_PACKAGES: Package[] = [
     ],
     price: 500,
     duration: 'Per night',
-    images: ['/images/hornbill/main.png'],
+    images: ['/images/hornbill/main.jpg'],
     is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
