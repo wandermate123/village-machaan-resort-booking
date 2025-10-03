@@ -78,7 +78,7 @@ const SafariEnquiries = () => {
     );
   };
 
-  const completeSafariEnquiries = () => {
+  const completeSafariEnquiries = async () => {
     // Simple validation - just check if all required fields are filled
     const incompleteBookings = safariBookings.filter(booking => !booking.date || !booking.timing);
     if (incompleteBookings.length > 0) {
@@ -95,16 +95,51 @@ const SafariEnquiries = () => {
       return;
     }
 
-    // Mark all enquiries as completed
-    setSafariBookings(prev => 
-      prev.map(booking => ({ ...booking, enquirySent: true }))
-    );
+    setIsSubmitting(true);
 
-    // Process selected safaris and proceed to next step
-    processSelectedSafaris();
-    dispatch({ type: 'SET_STEP', payload: 4 });
-    
-    showSuccess('Safari Enquiries Completed', `${safariBookings.length} safari enquiry(ies) have been noted and will be processed by our team.`);
+    try {
+      // Prepare safari enquiries data for submission
+      const enquiriesData = safariBookings.map(booking => ({
+        booking_id: state.sessionId || null,
+        guest_name: `${state.guestDetails.firstName} ${state.guestDetails.lastName}`,
+        email: state.guestDetails.email,
+        phone: state.guestDetails.phone || null,
+        safari_option_id: null, // We'll use safari_name instead
+        safari_name: `Jungle Safari - ${booking.timing.charAt(0).toUpperCase() + booking.timing.slice(1)}`,
+        preferred_date: booking.date,
+        preferred_timing: booking.timing,
+        number_of_persons: booking.persons,
+        special_requirements: state.guestDetails.specialRequests || null,
+        status: 'pending' as const,
+        admin_notes: null,
+        response: null,
+        responded_at: null,
+        responded_by: null
+      }));
+
+      // Submit enquiries to the database
+      const result = await SafariQueriesService.createBulkSafariQueries(enquiriesData);
+
+      if (result.success) {
+        // Mark all enquiries as completed
+        setSafariBookings(prev => 
+          prev.map(booking => ({ ...booking, enquirySent: true }))
+        );
+
+        // Process selected safaris and proceed to next step
+        processSelectedSafaris();
+        dispatch({ type: 'SET_STEP', payload: 4 });
+        
+        showSuccess('Safari Enquiries Submitted', `${safariBookings.length} safari enquiry(ies) have been submitted and will be processed by our team.`);
+      } else {
+        showError('Submission Failed', result.error || 'Failed to submit safari enquiries. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting safari enquiries:', error);
+      showError('Submission Error', 'An error occurred while submitting your safari enquiries. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const generateDateOptions = () => {
@@ -787,15 +822,24 @@ const SafariEnquiries = () => {
             {safariBookings.length > 0 && (
           <button
                 onClick={completeSafariEnquiries}
-                disabled={safariBookings.some(booking => !booking.date || !booking.timing)}
+                disabled={safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting}
                 className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  safariBookings.some(booking => !booking.date || !booking.timing)
+                  safariBookings.some(booking => !booking.date || !booking.timing) || isSubmitting
                 ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
               >
-                <span>Complete Safari Enquiries</span>
-            <ArrowRight className="w-4 h-4" />
+                {isSubmitting ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Complete Safari Enquiries</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
           </button>
             )}
           </div>

@@ -22,7 +22,7 @@ import {
 import { SafariQueriesService, SafariQuery, SafariQueryFilters, SafariQueryStats } from '../../services/safariQueriesService';
 import { useToast } from '../common/Toast';
 import LoadingSpinner from '../common/LoadingSpinner';
-import ConfirmDialog from '../common/ConfirmDialog';
+import { supabase } from '../../lib/supabase';
 
 const SafariQueriesManagement = () => {
   const { showSuccess, showError, showInfo } = useToast();
@@ -55,6 +55,37 @@ const SafariQueriesManagement = () => {
   useEffect(() => {
     fetchData();
   }, [filters]);
+
+  // Set up real-time subscription for safari queries
+  useEffect(() => {
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel('safari_queries_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'safari_queries' 
+        }, 
+        (payload) => {
+          console.log('🔄 Safari queries real-time update:', payload);
+          
+          // Show notification for new enquiries
+          if (payload.eventType === 'INSERT') {
+            showInfo('New Safari Enquiry', `A new safari enquiry has been received from ${payload.new.guest_name}`);
+          }
+          
+          // Refresh data when there are changes
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
