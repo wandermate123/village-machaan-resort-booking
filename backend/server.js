@@ -3,8 +3,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,23 +13,18 @@ const PORT = process.env.PORT || 3001;
 // Add startup logging
 console.log('🚀 Starting Village Machaan Backend Server...');
 
-// Database connection
-const connectDB = async () => {
-  try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/village_machaan';
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ MongoDB connected successfully');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
-  }
-};
+// Supabase configuration
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Connect to database
-connectDB();
+// Initialize Supabase client
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  console.log('✅ Supabase client initialized');
+} else {
+  console.warn('⚠️ Supabase credentials not found. Some features may not work.');
+}
 
 // Middleware
 app.use(helmet());
@@ -49,12 +45,31 @@ app.use('/api/', limiter);
 const safariEnquiryRoutes = require('./routes/safariEnquiryRoutes');
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  
+  if (supabase) {
+    try {
+      // Test Supabase connection by querying a simple table
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('count')
+        .limit(1);
+      
+      if (!error) {
+        dbStatus = 'connected';
+      }
+    } catch (error) {
+      console.error('Health check error:', error);
+    }
+  }
+  
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     service: 'Village Machaan Backend',
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    database: dbStatus,
+    supabase_configured: !!supabase
   });
 });
 

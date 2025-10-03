@@ -178,8 +178,8 @@ const SafariEnquiries = () => {
     if (safariBookings.length > 0) {
       processSelectedSafaris();
     } else {
-      dispatch({ type: 'SET_SAFARIS', payload: [] });
-      dispatch({ type: 'CALCULATE_TOTAL' });
+    dispatch({ type: 'SET_SAFARIS', payload: [] });
+    dispatch({ type: 'CALCULATE_TOTAL' });
     }
     dispatch({ type: 'SET_STEP', payload: 4 });
   };
@@ -407,30 +407,30 @@ const SafariEnquiries = () => {
         </div>
 
         {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Safari Section Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-light text-gray-800 mb-2">Wildlife Safari Inquiries</h2>
+        <div className="mb-8">
+          <div className="mb-6">
+            <h2 className="text-xl sm:text-2xl font-light text-gray-800 mb-2">Wildlife Safari Inquiries</h2>
             <p className="text-red-600 text-sm mb-4">
                 Safari requests are treated as inquiries only. Confirmation will be shared by our team with a payment link if dates are available, or alternate options if not.
               </p>
             <div className="flex items-center text-gray-600">
-              <Info className="w-4 h-4 mr-2" />
+              <Info className="w-4 h-4 mr-2 flex-shrink-0" />
               <span className="text-sm">Submit your wildlife safari preferences for our team to review</span>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button 
               onClick={addSafariBox}
-              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-6 py-2.5 text-sm font-medium transition-all duration-200 rounded-lg shadow-sm hover:shadow-md"
+              className="flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 text-sm font-medium transition-all duration-200 rounded-lg shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
               ADD SAFARI
             </button>
             <button 
               onClick={handleSkipSafari}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 text-sm font-medium transition-all duration-200 rounded-lg border border-gray-200"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 text-sm font-medium transition-all duration-200 rounded-lg border border-gray-200"
             >
               CONTINUE
             </button>
@@ -456,57 +456,49 @@ const SafariEnquiries = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
-            {/* Safari Container */}
-            <div className="w-full">
-              {safariBookings.map((booking, index) => (
-                <div key={booking.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 mb-8 last:mb-0">
-                {/* Safari Box - Exact Design Match */}
-                <div className="flex mx-auto overflow-hidden" style={{ maxWidth: '900px', width: '100%', height: '415px', padding: 0, margin: 0 }}>
-                  {/* Left Image Section */}
-                  <div 
-                    className="relative flex-shrink-0"
-                    style={{
-                      width: '45%',
-                      minWidth: '400px',
-                      height: '415px',
-                      background: 'url(/images/safari/tiger-safari.jpg) no-repeat 0 0',
-                      backgroundSize: 'cover',
-                      zIndex: 10,
-                      margin: 0,
-                      padding: 0
-                    }}
-                  >
-                    {/* Navigation Arrows */}
-                    <button className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-colors">
+          <div className="space-y-6">
+             {/* Safari Container */}
+             <div className="w-full">
+            {safariBookings.map((booking, index) => (
+                 <div key={booking.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 mb-6 last:mb-0 rounded-lg">
+                 {/* Safari Box - Mobile Responsive Design */}
+                 <div className="flex flex-col lg:flex-row mx-auto overflow-hidden" style={{ maxWidth: '900px', width: '100%', minHeight: '415px', padding: 0, margin: 0 }}>
+                   {/* Image Section - Mobile First */}
+                   <div 
+                     className="relative w-full lg:w-1/2 h-64 lg:h-auto"
+                     style={{
+                       minHeight: '250px',
+                       background: 'url(/images/safari/tiger-safari.jpg) no-repeat center center',
+                       backgroundSize: 'cover',
+                       zIndex: 10,
+                       margin: 0,
+                       padding: 0
+                     }}
+                   >
+                     {/* Navigation Arrows - Hidden on mobile */}
+                     <button className="hidden lg:block absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-colors">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-colors">
+                     <button className="hidden lg:block absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-colors">
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Right Content Section */}
-                  <div 
-                    className="relative bg-white flex-shrink-0 overflow-hidden"
-                    style={{
-                      width: '55%',
-                      minWidth: '500px',
-                      height: '415px',
-                      padding: '27px 24px'
-                    }}
-                  >
+                   {/* Content Section - Mobile Responsive */}
+                   <div 
+                     className="relative bg-white w-full lg:w-1/2 p-4 lg:p-6"
+                     style={{
+                       minHeight: '300px'
+                     }}
+                   >
                     {/* Title */}
                     <h3 
-                      className="text-gray-800 font-normal absolute"
+                      className="text-gray-800 font-normal mb-2"
                       style={{
                         fontFamily: 'TAN - Angleton, sans-serif',
-                        fontSize: '15px',
+                        fontSize: '16px',
                         fontWeight: '400',
-                        lineHeight: '28.845px',
-                        top: '27px',
-                        left: '20px',
-                        zIndex: 1
+                        lineHeight: '1.5'
                       }}
                     >
                       Jungle Safari {index + 1}
@@ -514,36 +506,25 @@ const SafariEnquiries = () => {
 
                     {/* Description */}
                     <p 
-                      className="text-black absolute"
+                      className="text-black mb-3 text-sm"
                       style={{
                         fontFamily: 'Quicksand, sans-serif',
-                        fontSize: '10px',
+                        fontSize: '12px',
                         fontWeight: '400',
-                        lineHeight: '12.5px',
-                        width: '334px',
-                        height: '39px',
-                        top: '62px',
-                        left: '20px',
-                        zIndex: 3
+                        lineHeight: '1.4'
                       }}
                     >
                       The magic begins with the first light of day — mist rolling through the trees, peacocks calling from afar, and the forest slowly awakening. A morning safari is a window into Pench's most enchanting hour.
                     </p>
 
-
                     {/* Note */}
                     <p 
-                      className="text-black absolute"
+                      className="text-black text-xs mb-4 p-2 bg-yellow-50 rounded"
                       style={{
                         fontFamily: 'Quicksand, sans-serif',
-                        fontSize: '7px',
+                        fontSize: '10px',
                         fontWeight: '400',
-                        lineHeight: '8.75px',
-                        width: '229px',
-                        height: '18px',
-                        top: '134px',
-                        right: '20px',
-                        zIndex: 4
+                        lineHeight: '1.3'
                       }}
                     >
                       Note: Payment and Safari Confirmation will happen later in our follow ups as possibility depends on many factors such as the weather.
@@ -551,47 +532,37 @@ const SafariEnquiries = () => {
 
                     {/* Tell us in more detail */}
                     <h4 
-                      className="text-gray-800 font-normal absolute"
+                      className="text-gray-800 font-normal mb-3"
                       style={{
                         fontFamily: 'TAN - Angleton, sans-serif',
-                        fontSize: '12px',
+                        fontSize: '14px',
                         fontWeight: '400',
-                        lineHeight: '23px',
-                        top: '196px',
-                        left: '20px',
-                        zIndex: 2
+                        lineHeight: '1.5'
                       }}
                     >
                       Tell us in more detail
                     </h4>
 
                     {/* Date Input */}
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '300px',
-                        height: '46px',
-                        top: '237px',
-                        left: '20px',
-                        zIndex: 11
-                      }}
-                    >
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Select Date
+                          </label>
                       <div 
-                        className="relative bg-white border w-full h-full"
+                        className="relative bg-white border rounded-lg"
                         style={{
-                          border: '0.5px solid #3f3e3e'
+                          border: '1px solid #d1d5db'
                         }}
                       >
                           <select 
                             value={booking.date}
                             onChange={(e) => handleSafariBookingChange(booking.id, 'date', e.target.value)}
-                          className="w-full h-full px-4 text-gray-700 focus:outline-none appearance-none bg-transparent"
-                          style={{
-                            fontFamily: 'Quicksand, sans-serif',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            lineHeight: '10px'
-                          }}
+                            className="w-full h-12 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-transparent rounded-lg"
+                            style={{
+                              fontFamily: 'Quicksand, sans-serif',
+                              fontSize: '14px',
+                              fontWeight: '500'
+                            }}
                             disabled={booking.enquirySent}
                           >
                           <option value="">Select Date</option>
@@ -604,8 +575,8 @@ const SafariEnquiries = () => {
                         <div 
                           className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
                           style={{
-                            width: '9px',
-                            height: '5px',
+                            width: '12px',
+                            height: '8px',
                             background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOSIgaGVpZ2h0PSI1IiB2aWV3Qm94PSIwIDAgOSA1IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik00LjUgNEwwIDBIOUw0LjUgNFoiIGZpbGw9IiM0RjRGN0YiLz48L3N2Zz4=) no-repeat center',
                             backgroundSize: 'cover'
                           }}
@@ -614,32 +585,25 @@ const SafariEnquiries = () => {
                         </div>
                         
                     {/* Time Input */}
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '300px',
-                        height: '46px',
-                        top: '291px',
-                        left: '20px',
-                        zIndex: 15
-                      }}
-                    >
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Time
+                          </label>
                       <div 
-                        className="relative bg-white border w-full h-full"
+                        className="relative bg-white border rounded-lg"
                         style={{
-                          border: '0.5px solid #3f3e3e'
+                          border: '1px solid #d1d5db'
                         }}
                       >
                           <select 
                             value={booking.timing}
                             onChange={(e) => handleSafariBookingChange(booking.id, 'timing', e.target.value)}
-                          className="w-full h-full px-4 text-gray-700 focus:outline-none appearance-none bg-transparent"
+                            className="w-full h-12 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-transparent rounded-lg"
                             style={{ 
-                            fontFamily: 'Quicksand, sans-serif',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            lineHeight: '10px'
-                          }}
+                              fontFamily: 'Quicksand, sans-serif',
+                              fontSize: '14px',
+                              fontWeight: '500'
+                            }}
                             disabled={booking.enquirySent}
                           >
                           <option value="">Select Time</option>
@@ -648,125 +612,99 @@ const SafariEnquiries = () => {
                             disabled={booking.date === state.checkIn}
                           >
                             Morning{booking.date === state.checkIn ? ' (Not available on check-in day)' : ''}
-                          </option>
+                              </option>
                           <option value="afternoon">Afternoon</option>
                           <option value="evening">Evening</option>
                           </select>
                         <div 
                           className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
                           style={{
-                            width: '9px',
-                            height: '5px',
+                            width: '12px',
+                            height: '8px',
                             background: 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOSIgaGVpZ2h0PSI1IiB2aWV3Qm94PSIwIDAgOSA1IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik00LjUgNEwwIDBIOUw0LjUgNFoiIGZpbGw9IiM0RjRGN0YiLz48L3N2Zz4=) no-repeat center',
                             backgroundSize: 'cover'
                           }}
                         />
-                        <span 
-                          className="absolute right-16 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                          style={{
-                            fontFamily: 'Quicksand, sans-serif',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            lineHeight: '12.5px'
-                          }}
-                        >
-                          (Morning, Afternoon, Night)
-                        </span>
-                        </div>
                       </div>
-
-                    {/* Time Note */}
-                    <p 
-                      className="text-black absolute"
-                      style={{
-                        fontFamily: 'Quicksand, sans-serif',
-                        fontSize: '6px',
-                        fontWeight: '400',
-                        lineHeight: '7.492px',
-                        width: '98px',
-                        height: '49px',
-                        top: '289px',
-                        right: '5px',
-                        zIndex: 5
-                      }}
-                    >
-                      Note: The morning safari offers the best chance to spot tigers and other wildlife, as animals are most active at dawn. Guests can also experience cooler temperatures and excellent birdwatching opportunities. Morning safari is not available on your check-in day.
-                    </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        (Morning, Afternoon, Evening)
+                      </p>
+                        </div>
                         
                     {/* Persons Input */}
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '300px',
-                        height: '46px',
-                        top: '345px',
-                        left: '20px',
-                        zIndex: 20
-                      }}
-                    >
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Number of Persons
+                      </label>
                       <div 
-                        className="relative bg-white border flex items-center w-full h-full"
+                        className="relative bg-white border rounded-lg flex items-center"
                         style={{
-                          border: '0.5px solid #3f3e3e'
+                          border: '1px solid #d1d5db',
+                          height: '48px'
                         }}
                       >
                         <span 
-                          className="px-4 text-gray-700"
+                          className="px-4 text-gray-700 flex-1"
                           style={{
                             fontFamily: 'Quicksand, sans-serif',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            lineHeight: '10px'
+                            fontSize: '14px',
+                            fontWeight: '500'
                           }}
                         >
-                          {booking.persons} Persons
+                          {booking.persons} Person{booking.persons > 1 ? 's' : ''}
                         </span>
                         <span 
-                          className="text-gray-400"
+                          className="text-gray-500 text-sm mr-4"
                           style={{
                             fontFamily: 'Quicksand, sans-serif',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            lineHeight: '12.5px'
+                            fontSize: '12px'
                           }}
                         >
-                          (6 people per Jeep)
+                          (Max 6 per Jeep)
                         </span>
                           <button 
                           onClick={() => handleSafariBookingChange(booking.id, 'persons', Math.min(6, booking.persons + 1))}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                          className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors mr-2"
                           disabled={booking.enquirySent || booking.persons >= 6}
                         >
-                          <Plus className="w-3 h-3 text-gray-600" />
+                          <Plus className="w-4 h-4 text-gray-600" />
                           </button>
                       </div>
                     </div>
 
-                    {/* Enquiry Status Indicator */}
-                    {booking.enquirySent && (
-                      <div 
-                        className="absolute top-4 right-4 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium"
+                    {/* Time Note */}
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                      <p 
+                        className="text-black text-xs"
                         style={{
-                          top: '20px',
-                          right: '20px'
+                          fontFamily: 'Quicksand, sans-serif',
+                          fontSize: '11px',
+                          fontWeight: '400',
+                          lineHeight: '1.4'
                         }}
                       >
-                        ✓ Sent
-                      </div>
-                    )}
+                        <strong>Note:</strong> The morning safari offers the best chance to spot tigers and other wildlife, as animals are most active at dawn. Guests can also experience cooler temperatures and excellent birdwatching opportunities. Morning safari is not available on your check-in day.
+                      </p>
+                    </div>
 
-                    {/* Remove Button */}
-                    <button 
-                      onClick={() => removeSafariBox(booking.id)}
-                      className="absolute top-4 right-16 p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
-                      style={{
-                        top: '20px',
-                        right: '5px'
-                      }}
-                      title="Remove Safari"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex justify-between items-center mt-4">
+                      {/* Enquiry Status Indicator */}
+                      {booking.enquirySent && (
+                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                          ✓ Enquiry Sent
+                        </div>
+                      )}
+                      
+                      {/* Remove Button */}
+                      <button 
+                        onClick={() => removeSafariBox(booking.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
+                        title="Remove Safari"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -835,32 +773,31 @@ const SafariEnquiries = () => {
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center mt-12 pt-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-200">
           <button
             onClick={handleBack}
-            className="flex items-center space-x-2 px-6 py-3 border border-gray-300 text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors rounded"
+            className="flex items-center space-x-2 px-6 py-3 border border-gray-300 text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors rounded-lg w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Package Selection</span>
           </button>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             {/* Safari Enquiry Button - Always show if there are safari bookings */}
             {safariBookings.length > 0 && (
-              <button
+          <button
                 onClick={completeSafariEnquiries}
                 disabled={safariBookings.some(booking => !booking.date || !booking.timing)}
-                className={`flex items-center space-x-2 px-6 py-3 rounded text-sm font-medium transition-colors ${
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors ${
                   safariBookings.some(booking => !booking.date || !booking.timing)
-                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
               >
                 <span>Complete Safari Enquiries</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            <ArrowRight className="w-4 h-4" />
+          </button>
             )}
-          
           </div>
         </div>
 

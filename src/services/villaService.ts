@@ -34,7 +34,7 @@ const DEMO_VILLAS: Villa[] = [
     base_price: 18000,
     max_guests: 6,
     amenities: ['Garden View', 'Family Room', 'BBQ Area', 'Spacious Living', 'Modern Kitchen', 'Outdoor Seating'],
-    images: ['/images/hornbill/main.jpg', '/images/hornbill/exterior.jpg', '/images/hornbill/interior.jpg', '/images/hornbill/garden.jpg'],
+    images: ['/images/hornbill/main.png', '/images/hornbill/exterior.jpg', '/images/hornbill/garden.jpg'],
     status: 'active',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -58,7 +58,8 @@ export class VillaService {
   static async getAllVillas(): Promise<Villa[]> {
     try {
       if (!isSupabaseConfigured) {
-        throw new Error('Supabase not configured. Please connect to Supabase first.');
+        console.log('📝 Supabase not configured, using demo villa data');
+        return DEMO_VILLAS;
       }
 
       console.log('🔍 Fetching all villas from Supabase...');
@@ -102,7 +103,8 @@ export class VillaService {
   static async getActiveVillas(): Promise<Villa[]> {
     try {
       if (!isSupabaseConfigured) {
-        throw new Error('Supabase not configured. Please connect to Supabase first.');
+        console.log('📝 Supabase not configured, using demo villa data');
+        return DEMO_VILLAS.filter(villa => villa.status === 'active');
       }
 
       const { data, error } = await supabase

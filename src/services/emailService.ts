@@ -16,11 +16,17 @@ export interface EmailTemplate {
 export class EmailService {
   private static serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
   private static publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+  private static confirmationTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID_CONFIRMATION;
+  private static paymentReminderTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID_PAYMENT_REMINDER;
+  private static adminNotificationTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID_ADMIN_NOTIFICATION;
 
   // Initialize EmailJS
   static init() {
     if (this.publicKey) {
       emailjs.init(this.publicKey);
+      console.log('✅ EmailJS initialized successfully');
+    } else {
+      console.warn('⚠️ EmailJS not configured - check environment variables');
     }
   }
 

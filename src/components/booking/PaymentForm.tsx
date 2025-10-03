@@ -106,6 +106,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           guestPhone: guestDetails.phone
         });
         console.log('✅ Half payment confirmation email sent');
+        
+        // Send admin notification for half payment
+        await EmailService.sendAdminNotification({
+          type: 'new_booking',
+          bookingId: identifier || bookingId,
+          guestName: `${guestDetails.firstName} ${guestDetails.lastName}`,
+          amount: Math.round(amount / 2),
+          details: `New booking created with 50% advance payment of ₹${Math.round(amount / 2).toLocaleString()}. Remaining amount: ₹${Math.round(amount / 2).toLocaleString()} to be paid at property. Payment method: Bank Transfer.`
+        });
+        console.log('✅ Admin notification email sent for half payment');
       } catch (emailError) {
         console.warn('⚠️ Failed to send confirmation email:', emailError);
         // Don't fail the payment if email fails
@@ -193,6 +203,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           remainingAmount: 0
         });
         console.log('✅ Online payment confirmation email sent');
+        
+        // Send admin notification
+        await EmailService.sendAdminNotification({
+          type: 'new_booking',
+          bookingId: identifier || bookingId,
+          guestName: `${guestDetails.firstName} ${guestDetails.lastName}`,
+          amount: amount,
+          details: `New booking created with full payment of ₹${amount.toLocaleString()}. Payment method: Online Card Payment.`
+        });
+        console.log('✅ Admin notification email sent');
       } catch (emailError) {
         console.warn('⚠️ Failed to send confirmation email:', emailError);
       }

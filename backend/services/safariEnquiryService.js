@@ -1,14 +1,28 @@
-const SafariEnquiry = require('../models/SafariEnquiry');
+const SafariEnquiryModel = require('../models/SafariEnquiry');
+const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
 class SafariEnquiryService {
   constructor() {
+    // Initialize Supabase client
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (supabaseUrl && supabaseServiceKey) {
+      this.supabase = createClient(supabaseUrl, supabaseServiceKey);
+      this.model = new SafariEnquiryModel(this.supabase);
+    } else {
+      console.warn('⚠️ Supabase credentials not found. Safari enquiry service will not work properly.');
+      this.supabase = null;
+      this.model = null;
+    }
+    
     this.emailTransporter = this.setupEmailTransporter();
   }
 
   setupEmailTransporter() {
     // Configure email transporter (you can use your preferred email service)
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail', // or your preferred service
       auth: {
         user: process.env.EMAIL_USER || 'your-email@gmail.com',
@@ -20,18 +34,25 @@ class SafariEnquiryService {
   // Create a single safari enquiry
   async createEnquiry(enquiryData) {
     try {
-      const enquiry = new SafariEnquiry(enquiryData);
-      const savedEnquiry = await enquiry.save();
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
+      }
+
+      const enquiry = await this.model.create(enquiryData);
       
       // Send confirmation email to guest
-      await this.sendEnquiryConfirmationEmail(savedEnquiry);
+      await this.sendEnquiryConfirmationEmail(enquiry);
       
       // Send notification to admin
-      await this.sendAdminNotification(savedEnquiry);
+      await this.sendAdminNotification(enquiry);
       
       return {
         success: true,
-        enquiry: savedEnquiry,
+        enquiry,
         message: 'Safari enquiry created successfully'
       };
     } catch (error) {
@@ -47,20 +68,27 @@ class SafariEnquiryService {
   // Create multiple safari enquiries (bulk)
   async createBulkEnquiries(enquiriesData) {
     try {
-      const enquiries = enquiriesData.map(data => new SafariEnquiry(data));
-      const savedEnquiries = await SafariEnquiry.insertMany(enquiries);
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
+      }
+
+      const enquiries = await this.model.createBulk(enquiriesData);
       
       // Send confirmation email for all enquiries
-      await this.sendBulkEnquiryConfirmationEmail(savedEnquiries);
+      await this.sendBulkEnquiryConfirmationEmail(enquiries);
       
       // Send admin notification
-      await this.sendBulkAdminNotification(savedEnquiries);
+      await this.sendBulkAdminNotification(enquiries);
       
       return {
         success: true,
-        enquiries: savedEnquiries,
-        count: savedEnquiries.length,
-        message: `${savedEnquiries.length} safari enquiries created successfully`
+        enquiries,
+        count: enquiries.length,
+        message: `${enquiries.length} safari enquiries created successfully`
       };
     } catch (error) {
       console.error('Error creating bulk safari enquiries:', error);
@@ -75,37 +103,24 @@ class SafariEnquiryService {
   // Get all enquiries with pagination and filtering
   async getEnquiries(filters = {}, page = 1, limit = 10) {
     try {
-      const query = {};
-      
-      // Apply filters
-      if (filters.status) query.status = filters.status;
-      if (filters.guestEmail) query.guestEmail = new RegExp(filters.guestEmail, 'i');
-      if (filters.bookingId) query.bookingId = filters.bookingId;
-      if (filters.dateFrom || filters.dateTo) {
-        query.preferredDate = {};
-        if (filters.dateFrom) query.preferredDate.$gte = new Date(filters.dateFrom);
-        if (filters.dateTo) query.preferredDate.$lte = new Date(filters.dateTo);
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
       }
 
-      const skip = (page - 1) * limit;
-      
-      const [enquiries, total] = await Promise.all([
-        SafariEnquiry.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-        SafariEnquiry.countDocuments(query)
-      ]);
+      const result = await this.model.find(filters, page, limit);
 
       return {
         success: true,
-        enquiries,
+        enquiries: result.data,
         pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
+          page: result.page,
+          limit: result.limit,
+          total: result.count,
+          pages: result.pages
         }
       };
     } catch (error) {
@@ -121,7 +136,15 @@ class SafariEnquiryService {
   // Get enquiry by ID
   async getEnquiryById(enquiryId) {
     try {
-      const enquiry = await SafariEnquiry.findOne({ enquiryId });
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
+      }
+
+      const enquiry = await this.model.findById(enquiryId);
       if (!enquiry) {
         return {
           success: false,
@@ -146,19 +169,15 @@ class SafariEnquiryService {
   // Update enquiry status
   async updateEnquiryStatus(enquiryId, status, adminNotes = '', adminResponse = '') {
     try {
-      const updateData = { 
-        status, 
-        updatedAt: new Date() 
-      };
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
+      }
 
-      if (adminNotes) updateData.adminNotes = adminNotes;
-      if (adminResponse) updateData.adminResponse = adminResponse;
-
-      const enquiry = await SafariEnquiry.findOneAndUpdate(
-        { enquiryId },
-        updateData,
-        { new: true }
-      );
+      const enquiry = await this.model.updateStatus(enquiryId, status, adminNotes, adminResponse);
 
       if (!enquiry) {
         return {
@@ -188,18 +207,15 @@ class SafariEnquiryService {
   // Confirm enquiry with specific date and timing
   async confirmEnquiry(enquiryId, confirmedDate, confirmedTiming, quotedPrice = 0) {
     try {
-      const enquiry = await SafariEnquiry.findOneAndUpdate(
-        { enquiryId },
-        {
-          status: 'confirmed',
-          confirmedDate: new Date(confirmedDate),
-          confirmedTiming,
-          quotedPrice,
-          confirmedAt: new Date(),
-          updatedAt: new Date()
-        },
-        { new: true }
-      );
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
+      }
+
+      const enquiry = await this.model.confirm(enquiryId, confirmedDate, confirmedTiming, quotedPrice);
 
       if (!enquiry) {
         return {
@@ -229,42 +245,19 @@ class SafariEnquiryService {
   // Get enquiry statistics
   async getEnquiryStats() {
     try {
-      const stats = await SafariEnquiry.aggregate([
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 }
-          }
-        }
-      ]);
+      if (!this.model) {
+        return {
+          success: false,
+          error: 'Supabase not configured',
+          message: 'Database not configured properly'
+        };
+      }
 
-      const total = await SafariEnquiry.countDocuments();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const todayCount = await SafariEnquiry.countDocuments({
-        createdAt: { $gte: today }
-      });
-
-      const thisMonth = new Date();
-      thisMonth.setDate(1);
-      thisMonth.setHours(0, 0, 0, 0);
-      
-      const thisMonthCount = await SafariEnquiry.countDocuments({
-        createdAt: { $gte: thisMonth }
-      });
+      const stats = await this.model.getStats();
 
       return {
         success: true,
-        stats: {
-          total,
-          today: todayCount,
-          thisMonth: thisMonthCount,
-          byStatus: stats.reduce((acc, stat) => {
-            acc[stat._id] = stat.count;
-            return acc;
-          }, {})
-        }
+        stats
       };
     } catch (error) {
       console.error('Error fetching enquiry stats:', error);
@@ -281,20 +274,20 @@ class SafariEnquiryService {
     try {
       const mailOptions = {
         from: process.env.EMAIL_USER || 'noreply@villagemachaan.com',
-        to: enquiry.guestEmail,
-        subject: `Safari Enquiry Confirmation - ${enquiry.formattedEnquiryId}`,
+        to: enquiry.email,
+        subject: `Safari Enquiry Confirmation - ${this.model.getFormattedEnquiryId(enquiry)}`,
         html: `
           <h2>Safari Enquiry Received</h2>
-          <p>Dear ${enquiry.guestName},</p>
+          <p>Dear ${enquiry.guest_name},</p>
           <p>Thank you for your safari enquiry. We have received your request and will get back to you soon.</p>
           
           <h3>Enquiry Details:</h3>
           <ul>
-            <li><strong>Enquiry ID:</strong> ${enquiry.formattedEnquiryId}</li>
-            <li><strong>Safari:</strong> ${enquiry.safariName}</li>
-            <li><strong>Preferred Date:</strong> ${enquiry.preferredDate.toDateString()}</li>
-            <li><strong>Preferred Timing:</strong> ${enquiry.preferredTiming}</li>
-            <li><strong>Number of Persons:</strong> ${enquiry.numberOfPersons}</li>
+            <li><strong>Enquiry ID:</strong> ${this.model.getFormattedEnquiryId(enquiry)}</li>
+            <li><strong>Safari:</strong> ${enquiry.safari_name}</li>
+            <li><strong>Preferred Date:</strong> ${new Date(enquiry.preferred_date).toDateString()}</li>
+            <li><strong>Preferred Timing:</strong> ${enquiry.preferred_timing}</li>
+            <li><strong>Number of Persons:</strong> ${enquiry.number_of_persons}</li>
           </ul>
           
           <p>We will review your enquiry and contact you within 24 hours with availability and pricing details.</p>
@@ -310,14 +303,14 @@ class SafariEnquiryService {
 
   async sendBulkEnquiryConfirmationEmail(enquiries) {
     try {
-      const guestEmail = enquiries[0].guestEmail;
-      const guestName = enquiries[0].guestName;
+      const guestEmail = enquiries[0].email;
+      const guestName = enquiries[0].guest_name;
       
       const enquiryList = enquiries.map(enquiry => `
         <li>
-          <strong>${enquiry.safariName}</strong> - 
-          ${enquiry.preferredDate.toDateString()} at ${enquiry.preferredTiming} 
-          (${enquiry.numberOfPersons} persons)
+          <strong>${enquiry.safari_name}</strong> - 
+          ${new Date(enquiry.preferred_date).toDateString()} at ${enquiry.preferred_timing} 
+          (${enquiry.number_of_persons} persons)
         </li>
       `).join('');
 
@@ -351,24 +344,24 @@ class SafariEnquiryService {
       const mailOptions = {
         from: process.env.EMAIL_USER || 'noreply@villagemachaan.com',
         to: process.env.ADMIN_EMAIL || 'admin@villagemachaan.com',
-        subject: `New Safari Enquiry - ${enquiry.formattedEnquiryId}`,
+        subject: `New Safari Enquiry - ${this.model.getFormattedEnquiryId(enquiry)}`,
         html: `
           <h2>New Safari Enquiry Received</h2>
           <h3>Guest Details:</h3>
           <ul>
-            <li><strong>Name:</strong> ${enquiry.guestName}</li>
-            <li><strong>Email:</strong> ${enquiry.guestEmail}</li>
-            <li><strong>Phone:</strong> ${enquiry.guestPhone}</li>
+            <li><strong>Name:</strong> ${enquiry.guest_name}</li>
+            <li><strong>Email:</strong> ${enquiry.email}</li>
+            <li><strong>Phone:</strong> ${enquiry.phone || 'Not provided'}</li>
           </ul>
           
           <h3>Safari Details:</h3>
           <ul>
-            <li><strong>Enquiry ID:</strong> ${enquiry.formattedEnquiryId}</li>
-            <li><strong>Safari:</strong> ${enquiry.safariName}</li>
-            <li><strong>Preferred Date:</strong> ${enquiry.preferredDate.toDateString()}</li>
-            <li><strong>Preferred Timing:</strong> ${enquiry.preferredTiming}</li>
-            <li><strong>Number of Persons:</strong> ${enquiry.numberOfPersons}</li>
-            <li><strong>Special Requirements:</strong> ${enquiry.specialRequirements || 'None'}</li>
+            <li><strong>Enquiry ID:</strong> ${this.model.getFormattedEnquiryId(enquiry)}</li>
+            <li><strong>Safari:</strong> ${enquiry.safari_name}</li>
+            <li><strong>Preferred Date:</strong> ${new Date(enquiry.preferred_date).toDateString()}</li>
+            <li><strong>Preferred Timing:</strong> ${enquiry.preferred_timing}</li>
+            <li><strong>Number of Persons:</strong> ${enquiry.number_of_persons}</li>
+            <li><strong>Special Requirements:</strong> ${enquiry.special_requirements || 'None'}</li>
           </ul>
           
           <p>Please review and respond to this enquiry.</p>
@@ -386,23 +379,23 @@ class SafariEnquiryService {
       const enquiry = enquiries[0];
       const enquiryList = enquiries.map(e => `
         <li>
-          <strong>${e.safariName}</strong> - 
-          ${e.preferredDate.toDateString()} at ${e.preferredTiming} 
-          (${e.numberOfPersons} persons)
+          <strong>${e.safari_name}</strong> - 
+          ${new Date(e.preferred_date).toDateString()} at ${e.preferred_timing} 
+          (${e.number_of_persons} persons)
         </li>
       `).join('');
 
       const mailOptions = {
         from: process.env.EMAIL_USER || 'noreply@villagemachaan.com',
         to: process.env.ADMIN_EMAIL || 'admin@villagemachaan.com',
-        subject: `Multiple Safari Enquiries - ${enquiries.length} enquiries from ${enquiry.guestName}`,
+        subject: `Multiple Safari Enquiries - ${enquiries.length} enquiries from ${enquiry.guest_name}`,
         html: `
           <h2>Multiple Safari Enquiries Received</h2>
           <h3>Guest Details:</h3>
           <ul>
-            <li><strong>Name:</strong> ${enquiry.guestName}</li>
-            <li><strong>Email:</strong> ${enquiry.guestEmail}</li>
-            <li><strong>Phone:</strong> ${enquiry.guestPhone}</li>
+            <li><strong>Name:</strong> ${enquiry.guest_name}</li>
+            <li><strong>Email:</strong> ${enquiry.email}</li>
+            <li><strong>Phone:</strong> ${enquiry.phone || 'Not provided'}</li>
           </ul>
           
           <h3>Safari Enquiries (${enquiries.length}):</h3>
@@ -424,14 +417,14 @@ class SafariEnquiryService {
     try {
       const mailOptions = {
         from: process.env.EMAIL_USER || 'noreply@villagemachaan.com',
-        to: enquiry.guestEmail,
-        subject: `Safari Enquiry Update - ${enquiry.formattedEnquiryId}`,
+        to: enquiry.email,
+        subject: `Safari Enquiry Update - ${this.model.getFormattedEnquiryId(enquiry)}`,
         html: `
           <h2>Safari Enquiry Status Update</h2>
-          <p>Dear ${enquiry.guestName},</p>
+          <p>Dear ${enquiry.guest_name},</p>
           <p>Your safari enquiry status has been updated to: <strong>${enquiry.status.toUpperCase()}</strong></p>
           
-          ${enquiry.adminResponse ? `<p><strong>Admin Response:</strong> ${enquiry.adminResponse}</p>` : ''}
+          ${enquiry.response ? `<p><strong>Admin Response:</strong> ${enquiry.response}</p>` : ''}
           
           <p>Best regards,<br>Village Machaan Team</p>
         `
@@ -447,21 +440,20 @@ class SafariEnquiryService {
     try {
       const mailOptions = {
         from: process.env.EMAIL_USER || 'noreply@villagemachaan.com',
-        to: enquiry.guestEmail,
-        subject: `Safari Confirmed - ${enquiry.formattedEnquiryId}`,
+        to: enquiry.email,
+        subject: `Safari Confirmed - ${this.model.getFormattedEnquiryId(enquiry)}`,
         html: `
           <h2>Safari Confirmed!</h2>
-          <p>Dear ${enquiry.guestName},</p>
+          <p>Dear ${enquiry.guest_name},</p>
           <p>Great news! Your safari has been confirmed.</p>
           
           <h3>Confirmed Details:</h3>
           <ul>
-            <li><strong>Enquiry ID:</strong> ${enquiry.formattedEnquiryId}</li>
-            <li><strong>Safari:</strong> ${enquiry.safariName}</li>
-            <li><strong>Confirmed Date:</strong> ${enquiry.confirmedDate.toDateString()}</li>
-            <li><strong>Confirmed Timing:</strong> ${enquiry.confirmedTiming}</li>
-            <li><strong>Number of Persons:</strong> ${enquiry.numberOfPersons}</li>
-            <li><strong>Price:</strong> ₹${enquiry.quotedPrice}</li>
+            <li><strong>Enquiry ID:</strong> ${this.model.getFormattedEnquiryId(enquiry)}</li>
+            <li><strong>Safari:</strong> ${enquiry.safari_name}</li>
+            <li><strong>Confirmed Date:</strong> ${new Date(enquiry.preferred_date).toDateString()}</li>
+            <li><strong>Confirmed Timing:</strong> ${enquiry.preferred_timing}</li>
+            <li><strong>Number of Persons:</strong> ${enquiry.number_of_persons}</li>
           </ul>
           
           <p>Please complete your payment to secure your booking.</p>
@@ -477,5 +469,3 @@ class SafariEnquiryService {
 }
 
 module.exports = new SafariEnquiryService();
-
-

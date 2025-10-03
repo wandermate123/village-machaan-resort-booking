@@ -125,7 +125,7 @@ const PackageSelection = () => {
       // Add demo images and highlights for display
       const packagesWithDisplay = packagesData.map((pkg, index) => ({
         ...pkg,
-        image: (pkg.images && pkg.images.length > 0) ? pkg.images[0] : (pkg.id === 'basic-stay' ? '/images/glass-cottage/main.jpg' : '/images/hornbill/main.jpg'),
+        image: (pkg.images && pkg.images.length > 0) ? pkg.images[0] : (pkg.id === 'basic-stay' ? '/images/glass-cottage/main.jpg' : '/images/hornbill/main.png'),
         highlights: pkg.inclusions || []
       }));
       

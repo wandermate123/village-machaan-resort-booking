@@ -41,7 +41,7 @@ const DEMO_PACKAGES: Package[] = [
     ],
     price: 500,
     duration: 'Per night',
-    images: ['/images/hornbill/main.jpg'],
+    images: ['/images/hornbill/main.png'],
     is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -53,7 +53,8 @@ export class PackageService {
   static async getAllPackages(): Promise<Package[]> {
     try {
       if (!isSupabaseConfigured) {
-        throw new Error('Supabase not configured. Please connect to Supabase first.');
+        console.log('📝 Supabase not configured, using demo package data');
+        return DEMO_PACKAGES;
       }
 
       const { data, error } = await supabase
@@ -83,7 +84,8 @@ export class PackageService {
   static async getActivePackages(): Promise<Package[]> {
     try {
       if (!isSupabaseConfigured) {
-        throw new Error('Supabase not configured. Please connect to Supabase first.');
+        console.log('📝 Supabase not configured, using demo package data');
+        return DEMO_PACKAGES.filter(pkg => pkg.is_active);
       }
 
       const { data, error } = await supabase
